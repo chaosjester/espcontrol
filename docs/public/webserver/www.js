@@ -180,7 +180,8 @@
     // Preview buttons
     ".sp-btn{width:19cqw;height:12.7cqw;border-radius:0.78cqw;padding:1.37cqw;" +
     "display:flex;flex-direction:column;justify-content:space-between;" +
-    "cursor:pointer;transition:all .2s;box-sizing:border-box;border:2px solid transparent}" +
+    "cursor:pointer;transition:all .2s;box-sizing:border-box;border:2px solid transparent;" +
+    "position:relative}" +
     ".sp-btn:hover{filter:brightness(1.15)}" +
     ".sp-btn.sp-selected{border-color:#03a9f4}" +
     ".sp-btn-icon{font-size:4.69cqw;line-height:1;color:#fff}" +
@@ -308,6 +309,17 @@
 
     // Empty state
     ".sp-empty{text-align:center;padding:24px;color:#666;font-size:13px}" +
+
+    // Context menu
+    ".sp-ctx-menu{position:fixed;z-index:200;background:#1e1e1e;border:1px solid #444;" +
+    "border-radius:8px;padding:4px 0;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.5)}" +
+    ".sp-ctx-item{display:flex;align-items:center;gap:10px;padding:8px 14px;" +
+    "cursor:pointer;font-size:13px;color:#e0e0e0;transition:background .1s;white-space:nowrap}" +
+    ".sp-ctx-item:hover{background:#3a3a3a}" +
+    ".sp-ctx-item .mdi{font-size:16px;width:18px;text-align:center;color:#aaa}" +
+    ".sp-ctx-item.sp-ctx-danger{color:#ef5350}" +
+    ".sp-ctx-item.sp-ctx-danger .mdi{color:#ef5350}" +
+    ".sp-ctx-divider{height:1px;background:#333;margin:4px 0}" +
 
     // Connection banner
     ".sp-banner{padding:10px 16px;font-size:13px;text-align:center;display:none}" +
@@ -871,7 +883,11 @@
       btn.className = "sp-btn" + (state.selectedSlot === slot ? " sp-selected" : "");
       btn.style.backgroundColor = "#" + (color.length === 6 ? color : "313131");
       btn.draggable = true;
+      var sensorBadge = b.sensor
+        ? '<span class="mdi mdi-gauge" style="position:absolute;top:1cqw;right:1cqw;font-size:1.6cqw;opacity:.5"></span>'
+        : '';
       btn.innerHTML =
+        sensorBadge +
         '<span class="sp-btn-icon mdi mdi-' + iconName + '"></span>' +
         '<span class="sp-btn-label">' + escHtml(label) + "</span>";
       btn.addEventListener("click", function () {
@@ -957,6 +973,26 @@
     panel.appendChild(icf);
 
     initIconPicker(iconPicker, b.icon, slot);
+
+    var sf = document.createElement("div");
+    sf.className = "sp-field";
+    sf.appendChild(fieldLabel("Sensor Entity (when on)"));
+    var sensorInp = textInput("sp-inp-sensor", b.sensor, "e.g. sensor.printer_percent_complete");
+    sf.appendChild(sensorInp);
+    var sensorHint = document.createElement("div");
+    sensorHint.style.cssText = "font-size:11px;color:#666;margin-top:2px";
+    sensorHint.textContent = "Show sensor value instead of icon when on";
+    sf.appendChild(sensorHint);
+    panel.appendChild(sf);
+
+    sensorInp.addEventListener("blur", function () {
+      state.buttons[slot - 1].sensor = this.value;
+      postText("button_" + slot + "_sensor", this.value);
+      renderPreview();
+    });
+    sensorInp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") this.blur();
+    });
 
     var btnRow = document.createElement("div");
     btnRow.className = "sp-btn-row";
@@ -1219,6 +1255,7 @@
     postText("button_order", state.order.join(","));
     postText("button_" + slot + "_entity", "");
     postText("button_" + slot + "_label", "");
+    postText("button_" + slot + "_sensor", "");
     postSelect("button_" + slot + "_icon", "Auto");
   }
 
