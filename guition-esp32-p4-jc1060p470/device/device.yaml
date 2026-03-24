@@ -17,9 +17,11 @@ esp32:
 # External components (sun_calc for sunrise/sunset calculation)
 external_components:
   - source:
-      type: local
-      path: ../components
+      type: git
+      url: https://github.com/jtenniswood/espcontrol
+      path: components
     components: [espcontrol]
+    refresh: 0s
 
 espcontrol:
 
