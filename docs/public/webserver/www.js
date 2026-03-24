@@ -177,6 +177,27 @@
     "font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s}" +
     ".sp-input:focus,.sp-select:focus{border-color:#03a9f4}" +
     ".sp-select{appearance:auto}" +
+
+    // Searchable icon picker
+    ".sp-icon-picker{position:relative}" +
+    ".sp-icon-picker-input{width:100%;padding:9px 12px;padding-left:36px;background:#2a2a2a;" +
+    "border:1px solid #444;border-radius:6px;color:#e0e0e0;font-size:14px;" +
+    "font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s}" +
+    ".sp-icon-picker-input:focus{border-color:#03a9f4}" +
+    ".sp-icon-picker-input::placeholder{color:#666}" +
+    ".sp-icon-picker-preview{position:absolute;left:10px;top:50%;transform:translateY(-50%);" +
+    "font-size:18px;color:#aaa;pointer-events:none}" +
+    ".sp-icon-picker.sp-open .sp-icon-picker-preview{top:19px}" +
+    ".sp-icon-dropdown{display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;" +
+    "background:#2a2a2a;border:1px solid #444;border-radius:6px;max-height:200px;" +
+    "overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.4)}" +
+    ".sp-icon-picker.sp-open .sp-icon-dropdown{display:block}" +
+    ".sp-icon-option{display:flex;align-items:center;gap:10px;padding:8px 12px;" +
+    "cursor:pointer;font-size:14px;color:#e0e0e0;transition:background .1s}" +
+    ".sp-icon-option:hover,.sp-icon-option.sp-highlighted{background:#3a3a3a}" +
+    ".sp-icon-option.sp-active{background:#1a2a3a}" +
+    ".sp-icon-option-icon{font-size:20px;width:24px;text-align:center;color:#aaa;flex-shrink:0}" +
+    ".sp-icon-option-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
     ".sp-btn-row{display:flex;gap:8px;margin-top:16px}" +
     ".sp-action-btn{padding:9px 16px;border:none;border-radius:6px;font-size:13px;" +
     "font-weight:500;cursor:pointer;font-family:inherit;transition:filter .15s}" +
@@ -827,11 +848,12 @@
           "</div>" +
           '<div class="sp-field">' +
           '<label class="sp-field-label">Icon</label>' +
-          '<select class="sp-select" id="sp-inp-icon">' +
-          ICON_OPTIONS.map(function (opt) {
-            return '<option value="' + opt + '"' + (opt === b.icon ? " selected" : "") + ">" + opt + "</option>";
-          }).join("") +
-          "</select></div>" +
+          '<div class="sp-icon-picker" id="sp-inp-icon-picker">' +
+          '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[b.icon] || "cog") + '"></span>' +
+          '<input class="sp-icon-picker-input" id="sp-inp-icon" type="text" ' +
+          'placeholder="Search icons\u2026" value="' + escAttr(b.icon) + '" autocomplete="off">' +
+          '<div class="sp-icon-dropdown"></div>' +
+          '</div></div>' +
           '<div class="sp-btn-row">' +
           '<button class="sp-action-btn sp-delete-btn">Delete Button</button></div>';
 
@@ -853,12 +875,7 @@
         expand.querySelector("#sp-inp-label").addEventListener("keydown", function (e) {
           if (e.key === "Enter") this.blur();
         });
-        expand.querySelector("#sp-inp-icon").addEventListener("change", function () {
-          state.buttons[slot - 1].icon = this.value;
-          postSelect("button_" + slot + "_icon", this.value);
-          renderPreview();
-          updateListItemHeader(item, slot);
-        });
+        initIconPicker(expand.querySelector("#sp-inp-icon-picker"), b.icon, slot, item);
         expand.querySelector(".sp-delete-btn").addEventListener("click", function () {
           deleteButton(slot);
         });
@@ -890,6 +907,120 @@
     } else if (entityEl) {
       entityEl.remove();
     }
+  }
+
+  // ── Searchable icon picker ──────────────────────────────────────────
+
+  function initIconPicker(picker, currentIcon, slot, listItem) {
+    var input = picker.querySelector(".sp-icon-picker-input");
+    var dropdown = picker.querySelector(".sp-icon-dropdown");
+    var preview = picker.querySelector(".sp-icon-picker-preview");
+    var highlighted = -1;
+
+    function iconClass(name) {
+      return ICON_MAP[name] || "cog";
+    }
+
+    function buildOptions(filter) {
+      dropdown.innerHTML = "";
+      highlighted = -1;
+      var lc = (filter || "").toLowerCase();
+      var matches = ICON_OPTIONS.filter(function (opt) {
+        return !lc || opt.toLowerCase().indexOf(lc) !== -1;
+      });
+      if (matches.length === 0) {
+        var empty = document.createElement("div");
+        empty.className = "sp-icon-option";
+        empty.style.color = "#666";
+        empty.textContent = "No matches";
+        dropdown.appendChild(empty);
+        return;
+      }
+      matches.forEach(function (opt) {
+        var row = document.createElement("div");
+        row.className = "sp-icon-option" +
+          (opt === currentIcon ? " sp-active" : "");
+        row.innerHTML =
+          '<span class="sp-icon-option-icon mdi mdi-' + iconClass(opt) + '"></span>' +
+          '<span class="sp-icon-option-label">' + escHtml(opt) + '</span>';
+        row.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          selectOption(opt);
+        });
+        dropdown.appendChild(row);
+      });
+    }
+
+    function selectOption(opt) {
+      currentIcon = opt;
+      input.value = opt;
+      preview.className = "sp-icon-picker-preview mdi mdi-" + iconClass(opt);
+      closePicker();
+      state.buttons[slot - 1].icon = opt;
+      postSelect("button_" + slot + "_icon", opt);
+      renderPreview();
+      updateListItemHeader(listItem, slot);
+    }
+
+    function openPicker() {
+      buildOptions("");
+      picker.classList.add("sp-open");
+      input.select();
+    }
+
+    function closePicker() {
+      picker.classList.remove("sp-open");
+      input.value = currentIcon;
+      highlighted = -1;
+    }
+
+    function highlightAt(idx) {
+      var items = dropdown.querySelectorAll(".sp-icon-option:not([style])");
+      if (items.length === 0) return;
+      items.forEach(function (el) { el.classList.remove("sp-highlighted"); });
+      if (idx < 0) idx = items.length - 1;
+      if (idx >= items.length) idx = 0;
+      highlighted = idx;
+      items[highlighted].classList.add("sp-highlighted");
+      items[highlighted].scrollIntoView({ block: "nearest" });
+    }
+
+    input.addEventListener("focus", function () {
+      openPicker();
+    });
+
+    input.addEventListener("blur", function () {
+      closePicker();
+    });
+
+    input.addEventListener("input", function () {
+      buildOptions(this.value);
+      if (dropdown.querySelector(".sp-icon-option:not([style])")) {
+        highlightAt(0);
+      }
+    });
+
+    input.addEventListener("keydown", function (e) {
+      var items = dropdown.querySelectorAll(".sp-icon-option:not([style])");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (!picker.classList.contains("sp-open")) { openPicker(); return; }
+        highlightAt(highlighted + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        highlightAt(highlighted - 1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (highlighted >= 0 && highlighted < items.length) {
+          var label = items[highlighted].querySelector(".sp-icon-option-label");
+          if (label) selectOption(label.textContent);
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closePicker();
+        input.blur();
+      }
+    });
   }
 
   // ── Drag and drop ───────────────────────────────────────────────────
@@ -1110,6 +1241,8 @@
           renderPreview();
           if (state.selectedSlot === slot && isExpandFocused()) {
             syncInput(document.getElementById("sp-inp-icon"), val);
+            var prev = document.querySelector(".sp-icon-picker-preview");
+            if (prev) prev.className = "sp-icon-picker-preview mdi mdi-" + (ICON_MAP[val] || "cog");
           } else {
             renderButtonList();
           }
