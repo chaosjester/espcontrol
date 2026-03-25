@@ -458,6 +458,7 @@
   var previewDropIdx = -1;
   var orderReceived = false;
   var migrationTimer = null;
+  var _eventSource = null;
 
   // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -511,6 +512,28 @@
 
   function postNumber(name, value) {
     post("/number/" + encodeURIComponent(name) + "/set?value=" + encodeURIComponent(value));
+  }
+
+  function waitForReboot() {
+    if (_eventSource) { _eventSource.close(); _eventSource = null; }
+    showBanner("Restarting device\u2026", "offline");
+    function poll() {
+      fetch("/", { method: "HEAD", cache: "no-store" })
+        .then(function (r) {
+          if (r.ok) {
+            if (els.banner) els.banner.className = "sp-banner";
+            els.root.querySelectorAll(".sp-apply-btn").forEach(function (btn) {
+              btn.disabled = false;
+              btn.textContent = "Apply Configuration";
+            });
+            connectEvents();
+          } else {
+            setTimeout(poll, 1500);
+          }
+        })
+        .catch(function () { setTimeout(poll, 1500); });
+    }
+    setTimeout(poll, 2000);
   }
 
   function escHtml(s) {
@@ -1023,7 +1046,10 @@
       }
       btn.disabled = true;
       btn.textContent = "Restarting\u2026";
-      setTimeout(function () { postButtonPress("Apply Configuration"); }, 600);
+      setTimeout(function () {
+        postButtonPress("Apply Configuration");
+        waitForReboot();
+      }, 600);
     });
     bar.appendChild(btn);
     var note = document.createElement("div");
@@ -1718,7 +1744,9 @@
   // ── SSE ──────────────────────────────────────────────────────────────
 
   function connectEvents() {
+    if (_eventSource) { _eventSource.close(); _eventSource = null; }
     var source = new EventSource("/events");
+    _eventSource = source;
 
     source.addEventListener("open", function () {
       state.selectedSlot = -1;
@@ -1734,6 +1762,7 @@
       showBanner("Reconnecting to device\u2026", "offline");
       if (source.readyState === 2) {
         source.close();
+        _eventSource = null;
         setTimeout(connectEvents, 5000);
       }
     });
