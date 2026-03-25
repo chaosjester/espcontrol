@@ -429,9 +429,6 @@
     outdoorEntity: "",
     presenceEntity: "",
     screensaverTimeout: 300,
-    backlight: 255,
-    timezone: "Europe/London (GMT+0)",
-    timezoneOptions: [],
     brightnessDayVal: 100,
     brightnessNightVal: 75,
     sunrise: "",
@@ -506,10 +503,6 @@
 
   function postNumber(name, value) {
     post("/number/" + encodeURIComponent(name) + "/set?value=" + encodeURIComponent(value));
-  }
-
-  function postLight(name, brightness) {
-    post("/light/" + encodeURIComponent(name) + "/turn_on?brightness=" + brightness);
   }
 
   function escHtml(s) {
@@ -701,17 +694,6 @@
     var blPanel = document.createElement("div");
     blPanel.className = "sp-panel";
 
-    // Timezone
-    blPanel.appendChild(fieldLabel("Timezone"));
-    var tzSelect = document.createElement("select");
-    tzSelect.className = "sp-select";
-    tzSelect.id = "sp-set-timezone";
-    tzSelect.addEventListener("change", function () {
-      postSelect("Clock: Timezone", this.value);
-    });
-    blPanel.appendChild(tzSelect);
-    els.setTimezone = tzSelect;
-
     // Daytime Brightness
     blPanel.appendChild(fieldLabel("Daytime Brightness"));
     var dayRow = document.createElement("div");
@@ -764,27 +746,6 @@
     blPanel.appendChild(sunInfo);
     els.sunInfo = sunInfo;
     updateSunInfo();
-
-    // Manual override
-    blPanel.appendChild(fieldLabel("Display Backlight Override"));
-    var blRow = document.createElement("div");
-    blRow.className = "sp-range-row";
-    var blRange = document.createElement("input");
-    blRange.type = "range";
-    blRange.className = "sp-range";
-    blRange.min = "0";
-    blRange.max = "100";
-    blRange.value = "100";
-    var blVal = document.createElement("span");
-    blVal.className = "sp-range-val";
-    blVal.textContent = "100%";
-    blRange.addEventListener("input", function () { blVal.textContent = this.value + "%"; });
-    blRange.addEventListener("change", function () { postLight("Display Backlight", Math.round(this.value * 255 / 100)); });
-    blRow.appendChild(blRange);
-    blRow.appendChild(blVal);
-    blPanel.appendChild(blRow);
-    els.setBacklight = blRange;
-    els.setBacklightVal = blVal;
 
     config.appendChild(blPanel);
 
@@ -1906,18 +1867,6 @@
         return;
       }
 
-      // --- Backlight ---
-      if (id === "light-display_backlight") {
-        var br = d.brightness != null ? d.brightness : 255;
-        var pct = Math.round(br * 100 / 255);
-        state.backlight = br;
-        if (els.setBacklight) {
-          els.setBacklight.value = pct;
-          els.setBacklightVal.textContent = pct + "%";
-        }
-        return;
-      }
-
       // --- Brightness day/night ---
       if (id === "number-screen__daytime_brightness") {
         state.brightnessDayVal = parseFloat(val) || 100;
@@ -1945,18 +1894,6 @@
       if (id === "text_sensor-screen__sunset") {
         state.sunset = val;
         updateSunInfo();
-        return;
-      }
-
-      // --- Timezone ---
-      if (id === "select-clock__timezone") {
-        state.timezone = val;
-        if (d.option) state.timezone = d.option;
-        if (els.setTimezone) els.setTimezone.value = state.timezone;
-        if (d.options && Array.isArray(d.options)) {
-          state.timezoneOptions = d.options;
-          populateTimezoneSelect();
-        }
         return;
       }
 
@@ -2029,18 +1966,6 @@
     if (state.sunrise && state.sunset) t += " \u00a0/\u00a0 ";
     if (state.sunset) t += "Sunset: " + escHtml(state.sunset);
     el.innerHTML = t;
-  }
-
-  function populateTimezoneSelect() {
-    if (!els.setTimezone || !state.timezoneOptions.length) return;
-    els.setTimezone.innerHTML = "";
-    state.timezoneOptions.forEach(function (opt) {
-      var o = document.createElement("option");
-      o.value = opt;
-      o.textContent = opt;
-      if (opt === state.timezone) o.selected = true;
-      els.setTimezone.appendChild(o);
-    });
   }
 
   function updateTempPreview() {
