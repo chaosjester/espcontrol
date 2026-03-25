@@ -1732,6 +1732,10 @@
 
     source.addEventListener("error", function () {
       showBanner("Reconnecting to device\u2026", "offline");
+      if (source.readyState === 2) {
+        source.close();
+        setTimeout(connectEvents, 5000);
+      }
     });
 
     var sseHandlers = {
