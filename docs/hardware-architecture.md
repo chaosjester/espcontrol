@@ -1,42 +1,47 @@
 ---
-title: Hardware & connectivity
+title: Specifications
 description:
-  ESP32-P4 application MCU, ESP32-C6 hosted WiFi, MIPI DSI display, GT911 touch, PSRAM, web server v3 with hosted www.js.
+  Hardware specifications for the Guition ESP32-P4 JC1060P470 touchscreen panel used by Espcontrol.
 ---
 
-# Hardware & connectivity
+# Specifications
 
-This firmware targets the **Guition ESP32-P4 JC1060P470** module: **ESP32-P4** for application code and display, plus **ESP32-C6** for WiFi via **ESP32 Hosted** (`esp32_hosted` in [`device/device.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/devices/guition-esp32-p4-jc1060p470/device/device.yaml)).
+Espcontrol runs on the **Guition ESP32-P4 JC1060P470**, a 7-inch touchscreen panel designed for smart home control.
 
-## MCU and memory
+## Display
 
-- **ESP32-P4** — ESP-IDF framework, **16MB** flash, CPU **360MHz**, experimental IDF features enabled as required by the board support package
-- **PSRAM** — hex mode, **200MHz**, for framebuffers / LVGL
-- **ESP32-C6** — secondary chip for **WiFi** connectivity (reset/cmd/clk/data pins defined in YAML)
+| Spec | Value |
+| --- | --- |
+| Screen size | 7 inches |
+| Resolution | 1024 x 600 pixels |
+| Display type | LCD (MIPI DSI) |
+| Touch | Capacitive touchscreen |
+| Backlight | Adjustable brightness (PWM) |
 
-## Display and touch
+## Processor and memory
 
-- **MIPI DSI** display, model **JC1060P470**, **RGB**, LVGL-driven UI (`rotation: 0`)
-- **GT911** touchscreen on **I2C** with reset and interrupt pins; **on_touch** wakes the screensaver script
+| Spec | Value |
+| --- | --- |
+| Main processor | ESP32-P4 at 360 MHz |
+| WiFi | ESP32-C6 (built-in, 2.4 GHz) |
+| Flash storage | 16 MB |
+| RAM | PSRAM (high-speed) |
 
-## Backlight
+## Connectivity
 
-- **LEDC** PWM on **GPIO23** driving a **monochromatic** `light` entity **Display Backlight**
+| Feature | Details |
+| --- | --- |
+| WiFi | 2.4 GHz, connects to your home network |
+| Home Assistant | Native API (automatic discovery) |
+| USB | USB-C port (for initial flashing and power) |
+| Over-the-air updates | Yes, via WiFi |
+| Web interface | Built-in, accessible from any browser on your network |
 
-## Network stack
+## Power
 
-- **WiFi** through hosted mode (see `esp32_hosted` block)
-- **OTA** — `esphome` and `http_request` platforms for standard and HTTP-based updates
-- **API** — Home Assistant native API with `homeassistant_states: true`
-- **`http_request`** client — used by the firmware update component
+The panel is powered through the USB-C port. A standard USB-C phone charger (5V) is sufficient.
 
-## Web interface
+## Where to buy
 
-- **`web_server`** port **80**, **version: 3**
-- **`js_url`** — `https://jtenniswood.github.io/espcontrol/webserver/www.js`
-
-The device fetches that script from **GitHub Pages** on each load so you can iterate the control UI without rebuilding firmware for every JS change. The script loads the stock ESPHome v3 bundle from `oi.esphome.io` for API compatibility, then injects the custom **Screen / Settings / Logs** UI.
-
-## External components
-
-The config pulls the **`espcontrol`** component from the same GitHub repo for sunrise/sunset math — see [External component](/external-component).
+- **Panel:** [AliExpress](https://s.click.aliexpress.com/e/_c335W0r5) (~£40)
+- **Desk stand** (3D printable): [MakerWorld](https://makerworld.com/en/models/2387421-guition-esp32p4-jc1060p470-7inch-screen-desk-mount#profileId-2614995)

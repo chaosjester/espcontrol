@@ -1,4 +1,14 @@
-# Designed for guition-esp32-p4-jc1060p470
+# =============================================================================
+# DEVICE - Guition ESP32-P4 JC1060P470 hardware definition
+# =============================================================================
+# Pin assignments, peripherals, and platform config for the 7" touch panel.
+# Includes the ESP32-P4 main SoC, ESP32-C6 hosted WiFi co-processor, MIPI
+# DSI display, GT911 capacitive touchscreen, and backlight PWM.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# ESP32-P4 platform (16MB flash, ESP-IDF framework)
+# ---------------------------------------------------------------------------
 esp32:
   variant: esp32p4
   flash_size: 16MB
@@ -14,12 +24,16 @@ esp32:
     sdkconfig_options:
       CONFIG_SDMMC_HOST_DEFAULT: "y"
 
-# Esphome
+# ---------------------------------------------------------------------------
+# ESPHome core (device name from substitutions)
+# ---------------------------------------------------------------------------
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
 
-# Secondary ESP32-C6 device for connectivity
+# ---------------------------------------------------------------------------
+# ESP32-C6 co-processor (provides WiFi/BLE via SDIO)
+# ---------------------------------------------------------------------------
 esp32_hosted:
   variant: esp32c6
   reset_pin: GPIO54
@@ -31,32 +45,44 @@ esp32_hosted:
   d3_pin: GPIO17
   active_high: true
 
-# Video memory
+# ---------------------------------------------------------------------------
+# PSRAM (video frame buffer memory)
+# ---------------------------------------------------------------------------
 psram:
   mode: hex
   speed: 200MHz
 
-# Over the Air Updates
+# ---------------------------------------------------------------------------
+# OTA updates (ESPHome native + HTTP-based)
+# ---------------------------------------------------------------------------
 ota:
   - platform: esphome
   - platform: http_request
 
-# Enable Home Assistant API
+# ---------------------------------------------------------------------------
+# Home Assistant API
+# ---------------------------------------------------------------------------
 api:
   reboot_timeout: 0s
   homeassistant_states: true
 
-# Enable logging
+# ---------------------------------------------------------------------------
+# Logging (light component silenced to WARN to reduce noise)
+# ---------------------------------------------------------------------------
 logger:
   logs:
     light: WARN
 
-# HTTP request client (for firmware updates)
+# ---------------------------------------------------------------------------
+# HTTP client (used by firmware_update.yaml for OTA from GitHub)
+# ---------------------------------------------------------------------------
 http_request:
   id: http_req
   timeout: 10s
 
-# Web Server
+# ---------------------------------------------------------------------------
+# Web server (v3 UI with custom JS and sorted config groups)
+# ---------------------------------------------------------------------------
 web_server:
   port: 80
   version: 3
@@ -78,14 +104,18 @@ web_server:
       name: "Firmware"
       sorting_weight: 40
 
-# Restart button (Apply Configuration)
+# ---------------------------------------------------------------------------
+# Restart button (triggers reboot to apply config changes)
+# ---------------------------------------------------------------------------
 button:
   - platform: restart
     name: "Apply Configuration"
     icon: mdi:restart
     entity_category: config
 
-# Power management
+# ---------------------------------------------------------------------------
+# Power management (LDO channels for DSI PHY and SD card)
+# ---------------------------------------------------------------------------
 esp_ldo:
   - channel: 3
     id: dsi_phy_enable
@@ -96,7 +126,9 @@ esp_ldo:
     voltage: 2.7V
     adjustable: True
 
-# Backlight
+# ---------------------------------------------------------------------------
+# Backlight (LEDC PWM output + monochromatic light entity)
+# ---------------------------------------------------------------------------
 output:
   - platform: ledc
     pin: GPIO23
@@ -112,7 +144,9 @@ light:
     default_transition_length: 0s
     gamma_correct: 1.0
 
-# Touchscreen
+# ---------------------------------------------------------------------------
+# I2C bus and touchscreen (GT911 capacitive, wakes screensaver on touch)
+# ---------------------------------------------------------------------------
 i2c:
   - id: bus_a
     sda: GPIO07
@@ -131,7 +165,6 @@ i2c_device:
   - id: i2cdev4
     address: 0x40
 
-# Touchscreen
 touchscreen:
   - platform: gt911
     id: my_touchscreen
@@ -141,7 +174,9 @@ touchscreen:
     on_touch:
       - script.execute: screensaver_wake
 
-# Display
+# ---------------------------------------------------------------------------
+# Display (7" 1024x600 MIPI DSI panel)
+# ---------------------------------------------------------------------------
 display:
   - platform: mipi_dsi
     id: my_display

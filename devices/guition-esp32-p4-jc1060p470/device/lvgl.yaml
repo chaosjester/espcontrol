@@ -1,8 +1,18 @@
+# =============================================================================
+# LVGL MAIN PAGE - Top-layer HUD and button grid
+# =============================================================================
+# Defines the primary UI: a top-layer overlay with temperature and clock
+# labels, and the main page containing a flex-wrap grid of 20 button widgets.
+# Buttons start hidden; sensors.yaml unhides active ones at boot.
+# =============================================================================
+
 lvgl:
+  # ---------------------------------------------------------------------------
+  # Top layer (always visible above all pages)
+  # ---------------------------------------------------------------------------
   top_layer:
     widgets:
-
-      # Temperature
+      # Indoor/outdoor temperature (top-left)
       - label:
           text: "-° / -°"
           id: temperatures
@@ -13,7 +23,7 @@ lvgl:
           text_color: 0xFFFFFF
           hidden: true
 
-      # Clock
+      # Clock (top-center, updated every minute by time.yaml)
       - label:
           text: "--:--"
           id: display_time
@@ -25,6 +35,9 @@ lvgl:
           text_color: 0xFFFFFF
           hidden: true
 
+  # ---------------------------------------------------------------------------
+  # Main page (flex-wrap grid of button widgets)
+  # ---------------------------------------------------------------------------
   pages:
     - id: main_page
       layout:
@@ -40,6 +53,7 @@ lvgl:
       pad_left: 5
       pad_right: 5
 
+      # 20 button widget slots (each defined in button_widget.yaml)
       widgets:
         - !include { file: button_widget.yaml, vars: { num: "1" } }
         - !include { file: button_widget.yaml, vars: { num: "2" } }

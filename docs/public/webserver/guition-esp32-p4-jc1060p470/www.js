@@ -245,7 +245,7 @@
     "display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:0.98cqw}" +
 
     // Preview buttons
-    ".sp-btn{width:19cqw;height:12.7cqw;border-radius:0.78cqw;padding:1.37cqw;" +
+    ".sp-btn{width:19cqw;height:12.5cqw;border-radius:0.78cqw;padding:1.37cqw;" +
     "display:flex;flex-direction:column;justify-content:space-between;" +
     "cursor:pointer;transition:all .2s;box-sizing:border-box;border:2px solid transparent;" +
     "position:relative}" +
@@ -254,6 +254,7 @@
     ".sp-btn-icon{font-size:4.69cqw;line-height:1;color:#fff}" +
     ".sp-btn-label{font-size:1.8cqw;line-height:1.2;color:#fff;" +
     "white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
+    ".sp-sensor-badge{position:absolute;top:1cqw;right:1cqw;font-size:1.6cqw;opacity:.5}" +
     ".sp-add-btn{border:2px dashed rgba(255,255,255,.25);background:transparent !important;" +
     "display:flex;align-items:center;justify-content:center;cursor:pointer}" +
     ".sp-add-btn:hover{border-color:#03a9f4}" +
@@ -275,12 +276,14 @@
 
     // Form fields
     ".sp-field{margin-bottom:12px}" +
-    ".sp-field-label{display:block;font-size:11px;color:#888;margin-bottom:4px;" +
+    ".sp-field-label{display:block;font-size:11px;color:#888;margin-top:10px;margin-bottom:4px;" +
     "text-transform:uppercase;letter-spacing:0.3px}" +
     ".sp-input,.sp-select{width:100%;padding:9px 12px;background:#2a2a2a;" +
     "border:1px solid #444;border-radius:6px;color:#e0e0e0;font-size:14px;" +
-    "font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s}" +
+    "font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s;" +
+    "margin-bottom:4px}" +
     ".sp-input:focus,.sp-select:focus{border-color:#03a9f4}" +
+    ".sp-input--narrow{width:80px}" +
     ".sp-select{appearance:auto}" +
 
     // Searchable icon picker
@@ -303,6 +306,7 @@
     ".sp-icon-option.sp-active{background:#1a2a3a}" +
     ".sp-icon-option-icon{font-size:20px;width:24px;text-align:center;color:#aaa;flex-shrink:0}" +
     ".sp-icon-option-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
+    ".sp-icon-option--empty{color:#666}" +
     ".sp-btn-row{display:flex;gap:8px;margin-top:16px}" +
     ".sp-action-btn{padding:9px 16px;border:none;border-radius:6px;font-size:13px;" +
     "font-weight:500;cursor:pointer;font-family:inherit;transition:filter .15s}" +
@@ -404,7 +408,11 @@
     ".sp-backup-btn .mdi{font-size:16px}" +
 
     // Sun info
-    ".sp-sun-info{font-size:13px;color:#888;padding:8px 0 2px}" +
+    ".sp-sun-info{font-size:13px;color:#888;padding:8px 0 2px;display:none}" +
+    ".sp-sun-info.sp-visible{display:block}" +
+
+    // Field hint
+    ".sp-field-hint{font-size:11px;color:#666;margin-top:2px}" +
 
     // Firmware
     ".sp-fw-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0}" +
@@ -519,6 +527,15 @@
   function isSettingsFocused() {
     var ae = document.activeElement;
     return ae && els.buttonSettings && els.buttonSettings.contains(ae);
+  }
+
+  function bindTextPost(input, postName, opts) {
+    input.addEventListener("blur", function () {
+      if (opts && opts.onBlur) opts.onBlur(this.value);
+      postText(postName, this.value);
+      if (opts && opts.rerender) renderPreview();
+    });
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
   }
 
   // ── Init ─────────────────────────────────────────────────────────────
@@ -694,55 +711,22 @@
     var blPanel = document.createElement("div");
     blPanel.className = "sp-panel";
 
-    // Daytime Brightness
-    blPanel.appendChild(fieldLabel("Daytime Brightness"));
-    var dayRow = document.createElement("div");
-    dayRow.className = "sp-range-row";
-    var dayRange = document.createElement("input");
-    dayRange.type = "range";
-    dayRange.className = "sp-range";
-    dayRange.min = "10";
-    dayRange.max = "100";
-    dayRange.step = "5";
-    dayRange.value = String(state.brightnessDayVal);
-    var dayVal = document.createElement("span");
-    dayVal.className = "sp-range-val";
-    dayVal.textContent = state.brightnessDayVal + "%";
-    dayRange.addEventListener("input", function () { dayVal.textContent = this.value + "%"; });
-    dayRange.addEventListener("change", function () { postNumber("Screen: Daytime Brightness", this.value); });
-    dayRow.appendChild(dayRange);
-    dayRow.appendChild(dayVal);
-    blPanel.appendChild(dayRow);
-    els.setDayBrightness = dayRange;
-    els.setDayBrightnessVal = dayVal;
+    var daySlider = createRangeSlider("Daytime Brightness", state.brightnessDayVal, "Screen: Daytime Brightness");
+    blPanel.appendChild(daySlider.label);
+    blPanel.appendChild(daySlider.row);
+    els.setDayBrightness = daySlider.range;
+    els.setDayBrightnessVal = daySlider.val;
 
-    // Nighttime Brightness
-    blPanel.appendChild(fieldLabel("Nighttime Brightness"));
-    var nightRow = document.createElement("div");
-    nightRow.className = "sp-range-row";
-    var nightRange = document.createElement("input");
-    nightRange.type = "range";
-    nightRange.className = "sp-range";
-    nightRange.min = "10";
-    nightRange.max = "100";
-    nightRange.step = "5";
-    nightRange.value = String(state.brightnessNightVal);
-    var nightVal = document.createElement("span");
-    nightVal.className = "sp-range-val";
-    nightVal.textContent = state.brightnessNightVal + "%";
-    nightRange.addEventListener("input", function () { nightVal.textContent = this.value + "%"; });
-    nightRange.addEventListener("change", function () { postNumber("Screen: Nighttime Brightness", this.value); });
-    nightRow.appendChild(nightRange);
-    nightRow.appendChild(nightVal);
-    blPanel.appendChild(nightRow);
-    els.setNightBrightness = nightRange;
-    els.setNightBrightnessVal = nightVal;
+    var nightSlider = createRangeSlider("Nighttime Brightness", state.brightnessNightVal, "Screen: Nighttime Brightness");
+    blPanel.appendChild(nightSlider.label);
+    blPanel.appendChild(nightSlider.row);
+    els.setNightBrightness = nightSlider.range;
+    els.setNightBrightnessVal = nightSlider.val;
 
     // Sun info
     var sunInfo = document.createElement("div");
     sunInfo.className = "sp-sun-info";
     sunInfo.id = "sp-sun-info";
-    sunInfo.style.display = "none";
     blPanel.appendChild(sunInfo);
     els.sunInfo = sunInfo;
     updateSunInfo();
@@ -755,39 +739,21 @@
     var tempPanel = document.createElement("div");
     tempPanel.className = "sp-panel";
 
-    // Indoor
-    var indoorToggle = toggleRow("Indoor Temperature", "sp-set-indoor-toggle", state._indoorOn);
-    tempPanel.appendChild(indoorToggle.row);
-    var indoorField = condField();
-    indoorField.appendChild(fieldLabel("Indoor Temp Entity"));
-    var indoorInp = textInput("sp-set-indoor-entity", "", "e.g. sensor.indoor_temperature");
-    indoorField.appendChild(indoorInp);
-    tempPanel.appendChild(indoorField);
-    indoorToggle.input.addEventListener("change", function () {
-      postSwitch("Indoor Temp Enable", this.checked);
-    });
-    indoorInp.addEventListener("blur", function () { postText("Indoor Temp Entity", this.value); });
-    indoorInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
-    els.setIndoorToggle = indoorToggle.input;
-    els.setIndoorField = indoorField;
-    els.setIndoorEntity = indoorInp;
+    var indoor = createEntityToggleSection("Indoor Temperature", "sp-set-indoor-toggle", state._indoorOn,
+      "Indoor Temp Enable", "Indoor Temp Entity", "Indoor Temp Entity", "e.g. sensor.indoor_temperature");
+    tempPanel.appendChild(indoor.toggle.row);
+    tempPanel.appendChild(indoor.field);
+    els.setIndoorToggle = indoor.toggle.input;
+    els.setIndoorField = indoor.field;
+    els.setIndoorEntity = indoor.input;
 
-    // Outdoor
-    var outdoorToggle = toggleRow("Outdoor Temperature", "sp-set-outdoor-toggle", state._outdoorOn);
-    tempPanel.appendChild(outdoorToggle.row);
-    var outdoorField = condField();
-    outdoorField.appendChild(fieldLabel("Outdoor Temp Entity"));
-    var outdoorInp = textInput("sp-set-outdoor-entity", "", "e.g. sensor.outdoor_temperature");
-    outdoorField.appendChild(outdoorInp);
-    tempPanel.appendChild(outdoorField);
-    outdoorToggle.input.addEventListener("change", function () {
-      postSwitch("Outdoor Temp Enable", this.checked);
-    });
-    outdoorInp.addEventListener("blur", function () { postText("Outdoor Temp Entity", this.value); });
-    outdoorInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
-    els.setOutdoorToggle = outdoorToggle.input;
-    els.setOutdoorField = outdoorField;
-    els.setOutdoorEntity = outdoorInp;
+    var outdoor = createEntityToggleSection("Outdoor Temperature", "sp-set-outdoor-toggle", state._outdoorOn,
+      "Outdoor Temp Enable", "Outdoor Temp Entity", "Outdoor Temp Entity", "e.g. sensor.outdoor_temperature");
+    tempPanel.appendChild(outdoor.toggle.row);
+    tempPanel.appendChild(outdoor.field);
+    els.setOutdoorToggle = outdoor.toggle.input;
+    els.setOutdoorField = outdoor.field;
+    els.setOutdoorEntity = outdoor.input;
 
     config.appendChild(tempPanel);
 
@@ -821,8 +787,7 @@
     ssPanel.appendChild(fieldLabel("Presence Sensor Entity"));
     var presInp = textInput("sp-set-presence", "", "e.g. binary_sensor.presence");
     ssPanel.appendChild(presInp);
-    presInp.addEventListener("blur", function () { postText("Presence Sensor Entity", this.value); });
-    presInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
+    bindTextPost(presInp, "Presence Sensor Entity", {});
     els.setPresence = presInp;
 
     config.appendChild(ssPanel);
@@ -926,8 +891,6 @@
     var el = document.createElement("label");
     el.className = "sp-field-label";
     el.textContent = text;
-    el.style.marginTop = "10px";
-    el.style.display = "block";
     return el;
   }
 
@@ -938,7 +901,6 @@
     el.id = id;
     el.value = value;
     el.placeholder = placeholder || "";
-    el.style.marginBottom = "4px";
     return el;
   }
 
@@ -962,7 +924,6 @@
     inp.id = id;
     inp.value = value;
     inp.placeholder = "6-digit hex e.g. FF8C00";
-    inp.style.marginBottom = "4px";
     row.appendChild(inp);
 
     picker.addEventListener("input", function () {
@@ -1016,6 +977,38 @@
     var el = document.createElement("div");
     el.className = "sp-cond-field";
     return el;
+  }
+
+  function createRangeSlider(label, initial, postName) {
+    var lbl = fieldLabel(label);
+    var row = document.createElement("div");
+    row.className = "sp-range-row";
+    var range = document.createElement("input");
+    range.type = "range";
+    range.className = "sp-range";
+    range.min = "10";
+    range.max = "100";
+    range.step = "5";
+    range.value = String(initial);
+    var val = document.createElement("span");
+    val.className = "sp-range-val";
+    val.textContent = initial + "%";
+    range.addEventListener("input", function () { val.textContent = this.value + "%"; });
+    range.addEventListener("change", function () { postNumber(postName, this.value); });
+    row.appendChild(range);
+    row.appendChild(val);
+    return { label: lbl, row: row, range: range, val: val };
+  }
+
+  function createEntityToggleSection(label, id, checked, switchName, entityLabel, entityPostName, placeholder) {
+    var toggle = toggleRow(label, id, checked);
+    var field = condField();
+    field.appendChild(fieldLabel(entityLabel));
+    var inp = textInput("", "", placeholder);
+    field.appendChild(inp);
+    toggle.input.addEventListener("change", function () { postSwitch(switchName, this.checked); });
+    bindTextPost(inp, entityPostName, {});
+    return { toggle: toggle, field: field, input: inp };
   }
 
   function buildApplyBar() {
@@ -1094,7 +1087,7 @@
       btn.style.backgroundColor = "#" + (color.length === 6 ? color : "313131");
       btn.draggable = true;
       var sensorBadge = b.sensor
-        ? '<span class="mdi mdi-gauge" style="position:absolute;top:1cqw;right:1cqw;font-size:1.6cqw;opacity:.5"></span>'
+        ? '<span class="sp-sensor-badge mdi mdi-gauge"></span>'
         : '';
       btn.innerHTML =
         sensorBadge +
@@ -1146,13 +1139,9 @@
     ef.appendChild(entityInp);
     panel.appendChild(ef);
 
-    entityInp.addEventListener("blur", function () {
-      state.buttons[slot - 1].entity = this.value;
-      postText("Button " + slot + " Entity", this.value);
-      renderPreview();
-    });
-    entityInp.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") this.blur();
+    bindTextPost(entityInp, "Button " + slot + " Entity", {
+      onBlur: function (v) { state.buttons[slot - 1].entity = v; },
+      rerender: true,
     });
 
     var lf = document.createElement("div");
@@ -1162,13 +1151,9 @@
     lf.appendChild(labelInp);
     panel.appendChild(lf);
 
-    labelInp.addEventListener("blur", function () {
-      state.buttons[slot - 1].label = this.value;
-      postText("Button " + slot + " Label", this.value);
-      renderPreview();
-    });
-    labelInp.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") this.blur();
+    bindTextPost(labelInp, "Button " + slot + " Label", {
+      onBlur: function (v) { state.buttons[slot - 1].label = v; },
+      rerender: true,
     });
 
     var icf = document.createElement("div");
@@ -1197,10 +1182,10 @@
     sensorCond.appendChild(sensorInp);
     sensorCond.appendChild(fieldLabel("Unit"));
     var unitInp = textInput("sp-inp-unit", b.unit, "e.g. %");
-    unitInp.style.width = "80px";
+    unitInp.className = "sp-input sp-input--narrow";
     sensorCond.appendChild(unitInp);
     var sensorHint = document.createElement("div");
-    sensorHint.style.cssText = "font-size:11px;color:#666;margin-top:2px";
+    sensorHint.className = "sp-field-hint";
     sensorHint.textContent = "Show sensor value instead of icon when on";
     sensorCond.appendChild(sensorHint);
     panel.appendChild(sensorCond);
@@ -1219,20 +1204,12 @@
         renderPreview();
       }
     });
-    sensorInp.addEventListener("blur", function () {
-      state.buttons[slot - 1].sensor = this.value;
-      postText("Button " + slot + " Sensor", this.value);
-      renderPreview();
+    bindTextPost(sensorInp, "Button " + slot + " Sensor", {
+      onBlur: function (v) { state.buttons[slot - 1].sensor = v; },
+      rerender: true,
     });
-    sensorInp.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") this.blur();
-    });
-    unitInp.addEventListener("blur", function () {
-      state.buttons[slot - 1].unit = this.value;
-      postText("Button " + slot + " Sensor Unit", this.value);
-    });
-    unitInp.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") this.blur();
+    bindTextPost(unitInp, "Button " + slot + " Sensor Unit", {
+      onBlur: function (v) { state.buttons[slot - 1].unit = v; },
     });
 
     var btnRow = document.createElement("div");
@@ -1270,8 +1247,7 @@
       });
       if (matches.length === 0) {
         var empty = document.createElement("div");
-        empty.className = "sp-icon-option";
-        empty.style.color = "#666";
+        empty.className = "sp-icon-option sp-icon-option--empty";
         empty.textContent = "No matches";
         dropdown.appendChild(empty);
         return;
@@ -1314,7 +1290,7 @@
     }
 
     function highlightAt(idx) {
-      var items = dropdown.querySelectorAll(".sp-icon-option:not([style])");
+      var items = dropdown.querySelectorAll(".sp-icon-option:not(.sp-icon-option--empty)");
       if (items.length === 0) return;
       items.forEach(function (el) { el.classList.remove("sp-highlighted"); });
       if (idx < 0) idx = items.length - 1;
@@ -1334,13 +1310,13 @@
 
     input.addEventListener("input", function () {
       buildOptions(this.value);
-      if (dropdown.querySelector(".sp-icon-option:not([style])")) {
+      if (dropdown.querySelector(".sp-icon-option:not(.sp-icon-option--empty)")) {
         highlightAt(0);
       }
     });
 
     input.addEventListener("keydown", function (e) {
-      var items = dropdown.querySelectorAll(".sp-icon-option:not([style])");
+      var items = dropdown.querySelectorAll(".sp-icon-option:not(.sp-icon-option--empty)");
       if (e.key === "ArrowDown") {
         e.preventDefault();
         if (!picker.classList.contains("sp-open")) { openPicker(); return; }
@@ -1531,13 +1507,17 @@
 
   // ── Add / Duplicate / Delete buttons ───────────────────────────────
 
-  function addButton() {
+  function firstFreeSlot() {
     var used = {};
     state.order.forEach(function (s) { used[s] = true; });
-    var slot = -1;
     for (var i = 1; i <= NUM_SLOTS; i++) {
-      if (!used[i]) { slot = i; break; }
+      if (!used[i]) return i;
     }
+    return -1;
+  }
+
+  function addButton() {
+    var slot = firstFreeSlot();
     if (slot < 0) return;
     state.order = state.order.concat(slot);
     postText("Button Order", state.order.join(","));
@@ -1545,12 +1525,7 @@
   }
 
   function duplicateButton(srcSlot) {
-    var used = {};
-    state.order.forEach(function (s) { used[s] = true; });
-    var newSlot = -1;
-    for (var i = 1; i <= NUM_SLOTS; i++) {
-      if (!used[i]) { newSlot = i; break; }
-    }
+    var newSlot = firstFreeSlot();
     if (newSlot < 0) return;
 
     var src = state.buttons[srcSlot - 1];
@@ -1759,165 +1734,144 @@
       showBanner("Reconnecting to device\u2026", "offline");
     });
 
-    source.addEventListener("state", function (e) {
-      var d;
-      try { d = JSON.parse(e.data); } catch (_) { return; }
-      var id = d.id;
-      var val = d.state != null ? String(d.state) : "";
-
-      // --- Button order ---
-      if (id === "text-button_order") {
+    var sseHandlers = {
+      "text-button_order": function (val) {
         orderReceived = true;
         state.order = parseOrder(val);
         renderPreview();
         renderButtonSettings();
         if (state.selectedSlot > 0 && state.order.indexOf(state.selectedSlot) === -1)
           state.selectedSlot = -1;
-        return;
-      }
-
-      // --- Shared colors ---
-      if (id === "text-button_on_color") {
+      },
+      "text-button_on_color": function (val) {
         state.onColor = val;
         if (els.setOnColor && els.setOnColor._syncColor) els.setOnColor._syncColor(val);
         renderPreview();
-        return;
-      }
-      if (id === "text-button_off_color") {
+      },
+      "text-button_off_color": function (val) {
         state.offColor = val;
         if (els.setOffColor && els.setOffColor._syncColor) els.setOffColor._syncColor(val);
         renderPreview();
-        return;
-      }
-
-      // --- Per-button entity / label ---
-      var textMatch = id.match(/^text-button_(\d+)_(entity|label|sensor|sensor_unit)$/);
-      if (textMatch) {
-        var slot = parseInt(textMatch[1], 10);
-        var field = textMatch[2] === "sensor_unit" ? "unit" : textMatch[2];
-        if (slot >= 1 && slot <= NUM_SLOTS) {
-          state.buttons[slot - 1][field] = val;
-          renderPreview();
-          if (state.selectedSlot === slot && isSettingsFocused()) {
-            var idMap = { entity: "sp-inp-entity", label: "sp-inp-label", sensor: "sp-inp-sensor", unit: "sp-inp-unit" };
-            syncInput(document.getElementById(idMap[field]), val);
-          } else {
-            renderButtonSettings();
-          }
-          scheduleMigration();
-        }
-        return;
-      }
-
-      // --- Per-button icon ---
-      var selMatch = id.match(/^select-button_(\d+)_icon$/);
-      if (selMatch) {
-        var slot = parseInt(selMatch[1], 10);
-        if (slot >= 1 && slot <= NUM_SLOTS) {
-          state.buttons[slot - 1].icon = val;
-          renderPreview();
-          if (state.selectedSlot === slot && isSettingsFocused()) {
-            syncInput(document.getElementById("sp-inp-icon"), val);
-            var prev = document.querySelector(".sp-icon-picker-preview");
-            if (prev) prev.className = "sp-icon-picker-preview mdi mdi-" + (ICON_MAP[val] || "cog");
-          } else {
-            renderButtonSettings();
-          }
-        }
-        return;
-      }
-
-      // --- Temperature switches ---
-      if (id === "switch-indoor_temp_enable") {
+      },
+      "switch-indoor_temp_enable": function (val, d) {
         state._indoorOn = d.value === true || val === "ON";
         els.setIndoorToggle.checked = state._indoorOn;
         els.setIndoorField.className = "sp-cond-field" + (state._indoorOn ? " sp-visible" : "");
         updateTempPreview();
-        return;
-      }
-      if (id === "switch-outdoor_temp_enable") {
+      },
+      "switch-outdoor_temp_enable": function (val, d) {
         state._outdoorOn = d.value === true || val === "ON";
         els.setOutdoorToggle.checked = state._outdoorOn;
         els.setOutdoorField.className = "sp-cond-field" + (state._outdoorOn ? " sp-visible" : "");
         updateTempPreview();
-        return;
-      }
-
-      // --- Temperature entities ---
-      if (id === "text-indoor_temp_entity") {
+      },
+      "text-indoor_temp_entity": function (val) {
         state.indoorEntity = val;
         syncInput(els.setIndoorEntity, val);
-        return;
-      }
-      if (id === "text-outdoor_temp_entity") {
+      },
+      "text-outdoor_temp_entity": function (val) {
         state.outdoorEntity = val;
         syncInput(els.setOutdoorEntity, val);
-        return;
-      }
-
-      // --- Screensaver ---
-      if (id === "number-screensaver_timeout") {
+      },
+      "number-screensaver_timeout": function (val) {
         state.screensaverTimeout = parseFloat(val) || 300;
         syncInput(els.setSSTimeout, String(state.screensaverTimeout));
-        return;
-      }
-      if (id === "text-presence_sensor_entity") {
+      },
+      "text-presence_sensor_entity": function (val) {
         state.presenceEntity = val;
         syncInput(els.setPresence, val);
-        return;
-      }
-
-      // --- Brightness day/night ---
-      if (id === "number-screen__daytime_brightness") {
+      },
+      "number-screen__daytime_brightness": function (val) {
         state.brightnessDayVal = parseFloat(val) || 100;
         if (els.setDayBrightness) {
           els.setDayBrightness.value = state.brightnessDayVal;
           els.setDayBrightnessVal.textContent = Math.round(state.brightnessDayVal) + "%";
         }
-        return;
-      }
-      if (id === "number-screen__nighttime_brightness") {
+      },
+      "number-screen__nighttime_brightness": function (val) {
         state.brightnessNightVal = parseFloat(val) || 75;
         if (els.setNightBrightness) {
           els.setNightBrightness.value = state.brightnessNightVal;
           els.setNightBrightnessVal.textContent = Math.round(state.brightnessNightVal) + "%";
         }
-        return;
-      }
-
-      // --- Sunrise / Sunset ---
-      if (id === "text_sensor-screen__sunrise") {
+      },
+      "text_sensor-screen__sunrise": function (val) {
         state.sunrise = val;
         updateSunInfo();
-        return;
-      }
-      if (id === "text_sensor-screen__sunset") {
+      },
+      "text_sensor-screen__sunset": function (val) {
         state.sunset = val;
         updateSunInfo();
-        return;
-      }
-
-      // --- Firmware ---
-      if (id === "text_sensor-firmware__version") {
+      },
+      "text_sensor-firmware__version": function (val) {
         state.firmwareVersion = val;
         if (els.fwVersionLabel) {
           els.fwVersionLabel.innerHTML = '<span class="sp-fw-label">Installed </span>' + escHtml(val || "dev");
         }
-        return;
-      }
-      if (id === "switch-firmware__auto_update") {
+      },
+      "switch-firmware__auto_update": function (val, d) {
         state.autoUpdate = d.value === true || val === "ON";
         if (els.setAutoUpdate) els.setAutoUpdate.checked = state.autoUpdate;
-        return;
-      }
-      if (id === "select-firmware__update_frequency") {
+      },
+      "select-firmware__update_frequency": function (val, d) {
         state.updateFrequency = val;
         if (d.option) state.updateFrequency = d.option;
         if (els.setUpdateFreq) els.setUpdateFreq.value = state.updateFrequency;
         if (d.options && Array.isArray(d.options)) {
           state.updateFreqOptions = d.options;
         }
-        return;
+      },
+    };
+
+    var ssePatterns = [
+      {
+        re: /^text-button_(\d+)_(entity|label|sensor|sensor_unit)$/,
+        fn: function (m, val) {
+          var slot = parseInt(m[1], 10);
+          var field = m[2] === "sensor_unit" ? "unit" : m[2];
+          if (slot >= 1 && slot <= NUM_SLOTS) {
+            state.buttons[slot - 1][field] = val;
+            renderPreview();
+            if (state.selectedSlot === slot && isSettingsFocused()) {
+              var idMap = { entity: "sp-inp-entity", label: "sp-inp-label", sensor: "sp-inp-sensor", unit: "sp-inp-unit" };
+              syncInput(document.getElementById(idMap[field]), val);
+            } else {
+              renderButtonSettings();
+            }
+            scheduleMigration();
+          }
+        },
+      },
+      {
+        re: /^select-button_(\d+)_icon$/,
+        fn: function (m, val) {
+          var slot = parseInt(m[1], 10);
+          if (slot >= 1 && slot <= NUM_SLOTS) {
+            state.buttons[slot - 1].icon = val;
+            renderPreview();
+            if (state.selectedSlot === slot && isSettingsFocused()) {
+              syncInput(document.getElementById("sp-inp-icon"), val);
+              var prev = document.querySelector(".sp-icon-picker-preview");
+              if (prev) prev.className = "sp-icon-picker-preview mdi mdi-" + (ICON_MAP[val] || "cog");
+            } else {
+              renderButtonSettings();
+            }
+          }
+        },
+      },
+    ];
+
+    source.addEventListener("state", function (e) {
+      var d;
+      try { d = JSON.parse(e.data); } catch (_) { return; }
+      var id = d.id;
+      var val = d.state != null ? String(d.state) : "";
+
+      if (sseHandlers[id]) { sseHandlers[id](val, d); return; }
+
+      for (var i = 0; i < ssePatterns.length; i++) {
+        var m = id.match(ssePatterns[i].re);
+        if (m) { ssePatterns[i].fn(m, val, d); return; }
       }
 
       console.log("[SSE] unhandled:", id, val);
@@ -1957,10 +1911,10 @@
     var el = els.sunInfo;
     if (!el) return;
     if (!state.sunrise && !state.sunset) {
-      el.style.display = "none";
+      el.classList.remove("sp-visible");
       return;
     }
-    el.style.display = "";
+    el.classList.add("sp-visible");
     var t = "";
     if (state.sunrise) t += "Sunrise: " + escHtml(state.sunrise);
     if (state.sunrise && state.sunset) t += " \u00a0/\u00a0 ";

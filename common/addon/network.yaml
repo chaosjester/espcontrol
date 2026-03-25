@@ -1,20 +1,30 @@
-# Online Status
+# =============================================================================
+# NETWORK - Connectivity diagnostics exposed to Home Assistant
+# =============================================================================
+# Online status, uptime, WiFi signal strength (dB + %), and IP address.
+# All sensors are diagnostic; signal dB is internal (used to derive %).
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Online status (binary_sensor)
+# ---------------------------------------------------------------------------
 binary_sensor:
   - platform: status
     name: "Online"
     id: ink_ha_connected
     icon: mdi:check-network
 
-
+# ---------------------------------------------------------------------------
+# Uptime and WiFi signal sensors
+# ---------------------------------------------------------------------------
 sensor:
-# Uptime
   - platform: uptime
     name: "Uptime Sensor"
     id: uptime_sensor
     entity_category: diagnostic
     internal: true
 
-# Wifi Signal Strength
+  # Raw dBm value (internal, feeds the percentage copy below)
   - platform: wifi_signal
     name: "Wifi Signal dB"
     id: wifi_signal_db
@@ -22,7 +32,7 @@ sensor:
     entity_category: "diagnostic"
     internal: true
 
-# Wifi Signal Strength
+  # Converted to 0-100% for easier reading in HA
   - platform: copy
     source_id: wifi_signal_db
     name: "Wifi Strength"
@@ -33,9 +43,10 @@ sensor:
     entity_category: "diagnostic"
     device_class: ""
 
-
+# ---------------------------------------------------------------------------
+# IP address (text_sensor)
+# ---------------------------------------------------------------------------
 text_sensor:
-# Ip Address
   - platform: wifi_info
     ip_address:
       name: IP Address

@@ -1,44 +1,72 @@
 ---
 title: Web UI
 description:
-  The device serves ESPHome web server v3 with a custom www.js: Screen preview, Settings, and Logs tabs.
+  How to use the built-in web page to configure buttons, display settings, screensaver, and brightness on your Espcontrol panel.
 ---
 
 # Web UI
 
-The firmware enables **ESPHome web server v3** on port 80. The stock React shell is loaded from `oi.esphome.io`, while **layout and behaviour** come from a custom script hosted on GitHub Pages (`js_url` in `device.yaml`) so the panel gets a tailored UI without reflashing for every text change.
+Your Espcontrol panel has a built-in web page for configuration. Open it by typing the device's IP address into any browser on your phone or computer — for example, `http://192.168.1.42`.
 
-Open **`http://<device-ip>/`** in a desktop or mobile browser.
+::: tip Finding the IP address
+The address is shown on the display screen when no buttons are configured. You can also find it in your router's device list or in Home Assistant under **Settings > Devices & Services > ESPHome**.
+:::
 
-## Tabs
+## Screen tab
 
-### Screen
+This is where you set up your buttons.
 
-- **Live preview** at roughly the panel’s aspect ratio (1024×600), including top bar (clock, temperatures when enabled).
-- **Add / remove / reorder** buttons with drag-and-drop. Empty slots show an add control.
-- **Per-button editor** (entity ID, optional label, icon, optional sensor + unit for readouts) when a slot is selected.
+- **Live preview** — see your button layout as it will appear on the display, including the top bar with clock and temperatures.
+- **Add buttons** — tap an empty slot to assign a Home Assistant device to it. Choose the device you want to control (its entity ID in Home Assistant, like `light.living_room`).
+- **Remove buttons** — remove a button to free up the slot.
+- **Reorder buttons** — drag and drop buttons to rearrange them.
+- **Set an icon** — pick from hundreds of icons, or choose **Auto** to let the panel pick one based on the device type (lights get a lightbulb, fans get a fan, etc.).
+- **Custom label** — give the button a name, or leave it blank to use the device's name from Home Assistant.
+- **Sensor readout** — optionally show a sensor value on the button (like a temperature reading) by entering a sensor entity and unit.
 
-The UI keeps **20 slots** (`NUM_SLOTS` in `www.js`). Entity and label changes are sent to the ESPHome REST endpoints (`/text/.../set`, `/select/.../set`, etc.).
+The panel supports up to **20 buttons**.
 
-### Settings
+## Settings tab
 
-Grouped to match ESPHome **sorting groups** in firmware:
+Adjust the look and behaviour of your panel.
 
-- **Button Configuration** — shared **Button Order** (comma-separated slot indices, e.g. `3,1,2,4`), per-button fields, **Button On/Off Color**
-- **Display Configuration** — indoor/outdoor temperature toggles and entity IDs, **Presence Sensor Entity** for screensaver wake
-- **Brightness** — **Clock: Timezone** (for sunrise/sunset), **Screen: Daytime / Nighttime Brightness**, diagnostic **Sunrise** / **Sunset** text
-- **Screensaver** — **Screensaver Timeout** (30–1800 seconds, step 30)
-- **Firmware** — version line, **Auto Update**, **Update Frequency**, **Check for Update**
+### Buttons
 
-### Logs
+- **On colour / Off colour** — the colour of buttons when they are switched on or off. Enter a colour code like `FF8C00` for orange.
 
-- Streams the device log with level-based colouring (same family as ESPHome’s web log viewer).
+### Display
+
+- **Indoor / Outdoor temperature** — toggle the temperature display on or off, and choose which Home Assistant sensor to use for each.
+- **Presence sensor** — if you have a motion or presence sensor, enter its entity ID here. The panel will wake from the screensaver when it detects movement.
+
+### Brightness
+
+- **Daytime brightness** — how bright the screen should be during the day (10%–100%).
+- **Nighttime brightness** — how bright the screen should be at night (10%–100%).
+- **Sunrise / Sunset** — shown for reference so you know when the brightness will change.
+
+### Screensaver
+
+- **Timeout** — how long the panel waits before activating the screensaver (30 seconds to 30 minutes, in 30-second steps). The default is 5 minutes.
+
+### Firmware
+
+- **Version** — the firmware version currently running on your panel.
+- **Auto Update** — turn on to let the panel install new firmware versions automatically.
+- **Update Frequency** — how often to check for updates: Hourly, Daily, Weekly, or Monthly.
+- **Check for Update** — press to check for a new version right now.
+
+## Logs tab
+
+A live stream of what the device is doing behind the scenes. This is mostly useful for troubleshooting — if something isn't working, the logs may show why. Entries are colour-coded by severity.
 
 ## Apply Configuration
 
-The **Apply Configuration** button triggers an ESPHome **restart** entity so persisted template values reload cleanly. Use it after bulk changes if something does not apply live.
+After making changes, tap **Apply Configuration** to restart the panel and load your new settings. Some changes (like adding a button) take effect immediately, but a restart ensures everything is applied cleanly.
 
 ## Related
 
-- [Buttons & Icons](/buttons-and-icons) — Auto icon domains and icon list
-- [Firmware Updates](/firmware-updates) — manifest URL and HA entities
+- [Buttons & Icons](/buttons-and-icons) — how Auto icons work and the full icon list
+- [Display & Screensaver](/display-screensaver) — more about temperature display and screensaver behaviour
+- [Backlight Schedule](/backlight-schedule) — how day/night brightness works
+- [Firmware Updates](/firmware-updates) — more about automatic and manual updates

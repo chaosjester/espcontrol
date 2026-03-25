@@ -1,51 +1,56 @@
 ---
 title: Buttons & Icons
 description:
-  Twenty button slots, Home Assistant entities, optional labels, Material Design icon picker, and Auto mode by domain.
+  How to set up buttons on your Espcontrol panel — choosing devices, picking icons, using Auto mode, and adding sensor readouts.
 ---
 
 # Buttons & Icons
 
-The firmware defines **20 button slots** (`btn_1` … `btn_20` in [`package.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/devices/guition-esp32-p4-jc1060p470/package.yaml)). Each slot has template entities for:
+Your panel has **20 button slots**. Each button can control one device in Home Assistant — a light, switch, fan, lock, cover, media player, or anything else that can be toggled.
 
-| Purpose | Entity name pattern |
+## Setting up a button
+
+From the [Web UI](/web-ui) **Screen** tab:
+
+1. **Tap an empty slot** to add a new button.
+2. **Enter the entity ID** of the Home Assistant device you want to control (for example, `light.living_room` or `switch.garden_lights`). You can find entity IDs in Home Assistant under **Settings > Devices & Services**, or by looking at the entity in the developer tools.
+3. **Choose an icon** from the dropdown, or select **Auto** (see below).
+4. **Set a label** (optional). If you leave it blank, the button will show the device's friendly name from Home Assistant.
+
+## Shared button settings
+
+These settings apply to all buttons:
+
+- **On colour** — the colour shown when a device is switched on. Default: orange (`FF8C00`).
+- **Off colour** — the colour shown when a device is switched off. Default: dark grey (`313131`).
+- **Button order** — the arrangement of buttons on the screen. You don't need to edit this manually — just drag and drop buttons in the web page to rearrange them.
+
+## Auto icons
+
+When you set a button's icon to **Auto**, the panel picks an appropriate icon based on the type of device:
+
+| Device type | Icon shown |
 | --- | --- |
-| Target HA entity | `Button N Entity` |
-| Optional label (max 30 chars) | `Button N Label` |
-| Optional sensor value | `Button N Sensor` / `Button N Sensor Unit` |
-| Icon | `Button N Icon` (select) |
+| Light | Lightbulb |
+| Switch | Power plug |
+| Fan | Fan |
+| Lock | Lock |
+| Cover (blinds, shutters) | Horizontal blinds |
+| Climate (heating, AC) | Air conditioner |
+| Media player | Speaker |
+| Camera | Camera |
+| Binary sensor (motion, door) | Motion sensor |
+| Anything else | Gear (cog) |
 
-Shared settings live under **Button Configuration**:
+If you'd rather pick a specific icon, the dropdown offers hundreds of choices from the [Material Design Icons](https://pictogrammers.com/library/mdi/) set — covering lighting, climate, security, weather, media, and more.
 
-- **Button On Color** / **Button Off Color** — 6-character hex (no `#`), defaults `FF8C00` / `313131`
-- **Button Order** — comma-separated slot numbers (`1`–`20`) controlling display order; the web UI updates this when you drag buttons
+## Sensor readouts
 
-If **Label** is empty, the UI shows the **entity id** or a **Configure** placeholder until an entity is set.
+Each button can optionally display a sensor value alongside the icon and label. This is useful for showing a temperature, humidity, or power reading on the same button that controls the device.
 
-## Auto icon
+- **Sensor** — enter the entity ID of a Home Assistant sensor (for example, `sensor.living_room_temperature`).
+- **Sensor unit** — the unit to display (for example, `°C` or `W`).
 
-When **Icon** is **Auto**, the custom web UI resolves the icon from the **entity domain** (part before the first `.`):
+## Missing an icon?
 
-| Domain | Auto icon (MDI name) |
-| --- | --- |
-| `light` | lightbulb |
-| `switch` | power-plug |
-| `fan` | fan |
-| `lock` | lock |
-| `cover` | blinds-horizontal |
-| `climate` | air-conditioner |
-| `media_player` | speaker |
-| `camera` | camera |
-| `binary_sensor` | motion-sensor |
-
-Any other domain falls back to **cog**. On the LVGL device, the same logic uses glyphs from [`assets/icons.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/common/assets/icons.yaml).
-
-## Icon picker list
-
-The **select** options for each **Button N Icon** are defined in [`config/button_template.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/common/config/button_template.yaml). There are **many** named choices (Material Design Icons **v7.4.47**), including lighting, climate, security, weather, media, and more — not a fixed count of 19. The on-device font in `icons.yaml` includes the glyph codepoints needed for the LVGL UI; the web preview uses the CDN stylesheet referenced in `www.js`.
-
-If you need an icon that is not in the list, [open an issue](https://github.com/jtenniswood/espcontrol/issues) with the MDI name and use case.
-
-## Sensors on buttons
-
-Optional **sensor** + **unit** fields let a button show a numeric readout (e.g. temperature) alongside the icon and label, when implemented in the LVGL layout for that slot.
+If the icon you need isn't in the list, [open an issue](https://github.com/jtenniswood/espcontrol/issues) with the icon name and what you'd use it for, and we'll look into adding it.

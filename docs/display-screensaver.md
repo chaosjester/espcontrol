@@ -1,34 +1,39 @@
 ---
 title: Display & Screensaver
 description:
-  Indoor and outdoor temperature entities, screensaver idle timeout, optional presence wake, and backlight integration.
+  How to configure the temperature display, screensaver timeout, and presence sensor wake on your Espcontrol panel.
 ---
 
 # Display & Screensaver
 
-Display-related settings are driven by template entities in [`config/display.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/common/config/display.yaml) and scripts in [`addon/backlight.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/common/addon/backlight.yaml). They appear under **Display Configuration**, **Screensaver**, and related groups in the web UI and in Home Assistant.
+These settings control what the panel shows on screen and how it behaves when you're not using it. All of these are configured from the **Settings** tab in the [Web UI](/web-ui).
 
-## Temperature row
+## Temperature display
 
-- **Indoor Temp Enable** / **Outdoor Temp Enable** — show or hide the temperature area in the top bar
-- **Indoor Temp Entity** / **Outdoor Temp Entity** — any **sensor** entity id whose state is shown (formatting depends on firmware LVGL labels)
+The top bar of your panel can show indoor and outdoor temperatures, pulled from any temperature sensor in Home Assistant.
 
-When both are enabled, the UI can show two values (e.g. `22° / 8°` style); with one enabled, a single value.
+- **Indoor temperature** — toggle it on or off, then enter the entity ID of the sensor you want to use (for example, `sensor.living_room_temperature`).
+- **Outdoor temperature** — works the same way. Use a weather sensor or outdoor thermometer entity.
 
-## Screensaver idle timeout
+When both are enabled, the top bar shows two temperatures side by side. When only one is enabled, it shows a single value.
 
-- **Screensaver Timeout** — number entity, **30–1800** seconds, step **30**, default **300** (5 minutes)
+## Screensaver
 
-When the idle timer elapses, the firmware runs the screensaver path: marks the display asleep, turns off the backlight light component, and **pauses LVGL with snow effect** (`screensaver_idle_check` script in `backlight.yaml`).
+To protect the display and save power, the panel activates a screensaver after a period of inactivity.
 
-## Presence wake
+- **Timeout** — how long the panel waits with no touch before activating the screensaver. You can set this from **30 seconds to 30 minutes**, in 30-second steps. The default is **5 minutes**.
 
-- **Presence Sensor Entity** — optional **binary_sensor** (e.g. mmWave). When configured, motion can **wake** the display from the screensaver via the `screensaver_wake` script (touch wake is also handled in `device.yaml`).
+When the screensaver is active, the screen shows a gentle snow animation and the backlight turns off. Touching the screen wakes it back up immediately.
 
-## Setup screen dim
+## Presence sensor wake
 
-On static **setup** LVGL pages, a separate **120s** timer dims the backlight to **50%** for burn-in protection (`setup_screen_dim` in `backlight.yaml`), independent of the main screensaver timeout.
+If you have a motion or presence sensor (such as a mmWave sensor), you can connect it so the panel wakes up when someone walks nearby — no need to touch the screen.
+
+- **Presence sensor** — enter the entity ID of a binary sensor in Home Assistant (for example, `binary_sensor.hallway_presence`). When this sensor detects motion, the panel wakes from the screensaver automatically.
+
+Leave this field blank if you don't have a presence sensor or prefer touch-only wake.
 
 ## Related
 
-- [Backlight schedule](/backlight-schedule) — day/night brightness and sunrise/sunset
+- [Backlight Schedule](/backlight-schedule) — automatic day and night brightness
+- [Web UI](/web-ui) — full guide to the Settings tab

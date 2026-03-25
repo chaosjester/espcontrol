@@ -1,41 +1,34 @@
 ---
 title: Backlight Schedule
 description:
-  Daytime and nighttime brightness using sunrise and sunset calculated from the selected timezone coordinates and Home Assistant time.
+  How the Espcontrol panel automatically adjusts screen brightness during the day and night based on sunrise and sunset.
 ---
 
 # Backlight Schedule
 
-Day/night backlight behaviour is implemented in [`addon/backlight_schedule.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/guition-esp32-p4-jc1060p470/addon/backlight_schedule.yaml) together with [`addon/time.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/guition-esp32-p4-jc1060p470/addon/time.yaml) and the **`espcontrol`** C++ helpers (see [External component](/external-component)).
+Your panel can automatically adjust its screen brightness based on the time of day — brighter during daylight hours and dimmer at night. This is especially useful for panels in bedrooms or hallways where a bright screen at night would be distracting.
 
-## Home Assistant time
+## How it works
 
-- **`time` platform `homeassistant`** — `id: ha_time` drives the on-screen clock and provides valid local time for sunrise/sunset math.
+The panel calculates sunrise and sunset times based on your timezone. During the day (between sunrise and sunset), it uses your **daytime brightness** setting. At night, it switches to your **nighttime brightness** setting. The transition happens automatically — you don't need to do anything once it's set up.
 
-## Timezone select
+## Settings
 
-- **Clock: Timezone** — large template **select** listing regions with GMT offsets in the label (e.g. `Europe/London (GMT+0)`). The firmware strips the parenthetical part for coordinate lookup and offset parsing.
+These are configured from the **Settings** tab in the [Web UI](/web-ui), under the **Brightness** section.
 
-Changing time sync or timezone triggers **`backlight_recalc_sunrise_sunset`**, which:
+- **Daytime brightness** — how bright the screen should be during the day. Range: 10%–100%, default: 100%.
+- **Nighttime brightness** — how bright the screen should be at night. Range: 10%–100%, default: 75%.
+- **Sunrise / Sunset** — these are shown for reference so you can see when the brightness will change. They update automatically each day.
 
-1. Resolves **latitude / longitude** for the IANA zone from the lookup table in `sun_calc.h`
-2. Computes **sunrise and sunset** for the current calendar date
-3. Publishes human-readable times to **Screen: Sunrise** and **Screen: Sunset** text sensors
-4. Sets **`sunrise_sunset_valid`** and reapplies brightness
+## Screensaver and brightness
 
-## Day vs night brightness
+When the screensaver is active, the backlight turns off regardless of the brightness schedule. When the panel wakes up (by touch or presence sensor), it returns to the correct brightness for the current time of day.
 
-- **Screen: Daytime Brightness** — 10–100%, step 5, default 100
-- **Screen: Nighttime Brightness** — 10–100%, step 5, default 75
+## If sunrise and sunset aren't available
 
-**`backlight_apply_brightness`** chooses **day** or **night** percentage from whether the current time (in minutes from midnight) falls between sunrise and sunset, then applies it to the display backlight with a short transition.
+If the panel can't determine sunrise and sunset times (for example, during initial setup), it defaults to using the **daytime brightness** setting at all times.
 
-If sunrise/sunset is invalid (unknown timezone coordinates), the firmware uses **daytime** brightness only.
+## Related
 
-## Periodic updates
-
-An **interval** runs every **60s** to detect **crossing** between day and night windows and reapply brightness. At **local midnight**, sunrise/sunset is **recalculated** for the new date.
-
-## Screensaver interaction
-
-While the display is considered asleep (`display_asleep`), scheduled brightness application is skipped so the screensaver state is not overridden.
+- [Display & Screensaver](/display-screensaver) — screensaver timeout and presence sensor
+- [Web UI](/web-ui) — full guide to the Settings tab

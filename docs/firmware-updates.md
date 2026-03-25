@@ -1,44 +1,36 @@
 ---
 title: Firmware Updates
 description:
-  HTTP update platform pointing at GitHub Pages, with Home Assistant entities for auto-update, frequency, and manual check.
+  How the Espcontrol panel checks for and installs firmware updates over the air, and how to control update behaviour.
 ---
 
 # Firmware Updates
 
-OTA behaviour is defined in [`addon/firmware_update.yaml`](https://github.com/jtenniswood/espcontrol/blob/main/common/addon/firmware_update.yaml).
+Your panel can update its firmware over the air — no USB cable or computer needed after the initial install. When a new version is available, the panel downloads and installs it automatically (if enabled) or waits for you to trigger the update manually.
 
-## Update source
+## Update settings
 
-The device uses ESPHome’s **`update`** platform **`http_request`** with:
+These are configured from the **Settings** tab in the [Web UI](/web-ui), under the **Firmware** section. They also appear as controls in Home Assistant.
 
-```text
-source: https://jtenniswood.github.io/espcontrol/firmware/manifest.json
-```
+- **Version** — the firmware version currently running on your panel (read-only).
+- **Auto Update** — turn this on to let the panel install new versions automatically. When off, you'll need to trigger updates manually.
+- **Update Frequency** — how often the panel checks for updates: **Hourly**, **Daily**, **Weekly**, or **Monthly**.
+- **Check for Update** — press this button to check for a new version right now, regardless of the automatic schedule.
 
-That URL must exist on **GitHub Pages** for the `espcontrol` repository. The docs site build copies static assets from `docs/public` into the site root; release **artifacts** can be merged into `docs/.vitepress/dist/firmware/` in CI (see workflow) so `manifest.json` and `*.bin` files are published alongside the documentation.
+## What happens during an update
 
-Until a release publishes a compatible manifest, the URL may return **404** — plan updates accordingly.
+1. The panel checks the update server for a newer version.
+2. If one is available and **Auto Update** is on, it downloads and installs the update.
+3. The panel restarts with the new firmware. Your settings (buttons, colours, temperatures, etc.) are preserved.
 
-## Project version
+The update usually takes a minute or two. The display may show a loading screen briefly during the restart.
 
-- `esphome.project` is set to **`jtenniswood.espcontrol`** with version from substitution **`firmware_version`** (default **`dev`** in tree).
-- **Firmware: Version** text sensor exposes the running build string.
+## Checking updates from Home Assistant
 
-## Home Assistant entities
+You can also manage updates from Home Assistant. The **Auto Update** toggle, **Update Frequency** selector, and **Check for Update** button all appear as entities that you can control from the Home Assistant dashboard or use in automations.
 
-| Entity | Role |
-| --- | --- |
-| **Firmware: Auto Update** | When on, available updates can be installed automatically (subject to interval logic). |
-| **Firmware: Update Frequency** | `Hourly`, `Daily`, `Weekly`, or `Monthly` — scales how often the hourly tick actually calls `update()` (counter modulo threshold). |
-| **Firmware: Check for Update** | Button — forces a check; uses a short internal flag so auto-install rules still apply only when appropriate. |
-
-Standard ESPHome **`update`** entities may also appear for the HTTP update platform depending on your HA version.
-
-## Manual compile / flash
-
-For local development, bump **`firmware_version`** in YAML or use ESPHome’s compile output as usual; GitHub-hosted OTA is optional for developers who flash over USB.
+The standard Home Assistant **Update** entity may also appear, depending on your Home Assistant version.
 
 ## Related
 
-- [Install](/install) — first-time flashing
+- [Install](/install) — first-time setup and flashing via USB

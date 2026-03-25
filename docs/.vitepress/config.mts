@@ -5,7 +5,7 @@ const hostname = 'https://jtenniswood.github.io/espcontrol/'
 export default defineConfig({
   title: 'Espcontrol',
   description:
-    'ESPHome Home Assistant control panel on Guition ESP32-P4 JC1060P470 — LVGL UI, web configuration, OTA updates.',
+    'Touchscreen control panel for Home Assistant on Guition ESP32-P4 — up to 20 buttons, web configuration, automatic updates.',
   base: '/espcontrol/',
   lang: 'en-US',
   cleanUrls: true,
@@ -97,9 +97,10 @@ export default defineConfig({
       }
       if (isHowTo) {
         articleSchema.step = [
-          { '@type': 'HowToStep', name: 'Create ESPHome config from package' },
-          { '@type': 'HowToStep', name: 'Flash firmware and connect WiFi' },
-          { '@type': 'HowToStep', name: 'Open device web UI and configure buttons' },
+          { '@type': 'HowToStep', name: 'Flash firmware from your browser' },
+          { '@type': 'HowToStep', name: 'Connect to WiFi' },
+          { '@type': 'HowToStep', name: 'Add to Home Assistant' },
+          { '@type': 'HowToStep', name: 'Configure buttons from the web page' },
         ]
       }
       pageData.frontmatter.head.push([
@@ -119,7 +120,7 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: 'Guide',
+        text: 'Getting Started',
         items: [
           { text: 'Overview', link: '/' },
           { text: 'Install', link: '/install' },
@@ -136,12 +137,19 @@ export default defineConfig({
         ],
       },
       {
-        text: 'Project',
+        text: 'Reference',
         items: [
-          { text: 'Hardware', link: '/hardware-architecture' },
+          { text: 'Specifications', link: '/hardware-architecture' },
+          { text: 'FAQ', link: '/faq' },
+          { text: 'Roadmap', link: '/roadmap' },
+        ],
+      },
+      {
+        text: 'Developer',
+        collapsed: true,
+        items: [
           { text: 'Package Layout', link: '/package-layout' },
           { text: 'External Component', link: '/external-component' },
-          { text: 'Roadmap', link: '/roadmap' },
         ],
       },
     ],

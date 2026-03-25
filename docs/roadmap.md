@@ -1,16 +1,14 @@
 ---
 title: Roadmap
 description:
-  Planned and considered improvements for Espcontrol — community-driven via GitHub issues.
+  What's next for Espcontrol — community-driven development via GitHub issues and releases.
 ---
 
 # Roadmap
 
-There is no fixed public roadmap document in the repository. Priorities evolve with **Home Assistant**, **ESPHome**, and hardware feedback.
+Espcontrol is actively developed and improved based on user feedback. There is no fixed public roadmap — features and priorities evolve based on what users need and what Home Assistant and the hardware support.
 
-**How to influence direction**
+## How to get involved
 
-- [Open an issue](https://github.com/jtenniswood/espcontrol/issues) for bugs, icon requests, or features
-- Watch [GitHub Releases](https://github.com/jtenniswood/espcontrol/releases) for tagged builds and OTA assets when published
-
-Documentation on this site is updated as features stabilize.
+- **Report a bug or request a feature:** [Open an issue on GitHub](https://github.com/jtenniswood/espcontrol/issues). Include as much detail as you can — what happened, what you expected, and any relevant screenshots or log entries.
+- **Stay up to date:** Watch the [GitHub Releases](https://github.com/jtenniswood/espcontrol/releases) page to see when new versions are published. If you have auto-update enabled, your panel will pick up new releases automatically.
