@@ -457,6 +457,7 @@
     ".sp-banner.sp-error{display:block;background:var(--danger);color:#fff}" +
     ".sp-banner.sp-offline{display:block;background:#1976d2;color:#fff}" +
     ".sp-banner.sp-success{display:block;background:var(--success);color:#fff}" +
+    ".sp-banner.sp-warning{display:block;background:#e6a700;color:#000}" +
 
     // Backup buttons
     ".sp-backup-btns{display:flex;gap:8px}" +
@@ -653,7 +654,7 @@
     if (!els.banner) return;
     els.banner.textContent = msg;
     els.banner.className = "sp-banner sp-" + type;
-    if (type === "error" || type === "success") {
+    if (type === "error" || type === "success" || type === "warning") {
       clearTimeout(els._bannerTimer);
       els._bannerTimer = setTimeout(function () {
         els.banner.className = "sp-banner";
@@ -1832,16 +1833,17 @@
           showBanner("Invalid config file \u2014 missing required fields", "error");
           return;
         }
-        if (data.buttons.length !== NUM_SLOTS) {
-          showBanner("Invalid config file \u2014 expected " + NUM_SLOTS + " button slots", "error");
-          return;
+        var importedCount = data.buttons.length;
+        if (importedCount !== NUM_SLOTS) {
+          showBanner("Backup has " + importedCount + " slots, current config has " + NUM_SLOTS + " \u2014 adapting", "warning");
         }
 
         postText("Button On Color", data.button_on_color || "FF8C00");
         postText("Button Off Color", data.button_off_color || "313131");
 
+        var empty = { entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "" };
         for (var i = 0; i < NUM_SLOTS; i++) {
-          var b = data.buttons[i];
+          var b = i < importedCount ? data.buttons[i] : empty;
           var n = i + 1;
           postText("Button " + n + " Entity", b.entity || "");
           postText("Button " + n + " Label", b.label || "");

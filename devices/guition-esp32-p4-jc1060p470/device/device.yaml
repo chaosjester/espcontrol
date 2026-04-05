@@ -23,6 +23,10 @@ esp32:
       disable_vfs_support_dir: false
     sdkconfig_options:
       CONFIG_SDMMC_HOST_DEFAULT: "y"
+  platformio_options:
+    build_flags:
+      - "-Wno-deprecated-declarations"
+      - "-Wno-literal-suffix"
 
 # ---------------------------------------------------------------------------
 # External component (sun_calc.h for on-device sunrise/sunset)
