@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize icon data from icons.json into the four downstream files.
+"""Synchronize icon data from icons.json into downstream files.
 
 Usage:
     python scripts/sync_icons.py           # write mode (default)
@@ -16,7 +16,6 @@ SOURCE = ROOT / "common" / "assets" / "icons.json"
 
 TARGETS = {
     "icons_yaml": ROOT / "common" / "assets" / "icons.yaml",
-    "button_template": ROOT / "common" / "config" / "button_template.yaml",
     "sensors": ROOT / "devices" / "guition-esp32-p4-jc1060p470" / "device" / "sensors.yaml",
     "www_js": ROOT / "docs" / "public" / "webserver" / "guition-esp32-p4-jc1060p470" / "www.js",
 }
@@ -52,14 +51,6 @@ def gen_icons_yaml_glyphs(data):
     for icon in data["icons"]:
         cp = icon["codepoint"]
         lines.append(f'      - "\\U{cp:>08s}"  # mdi-{icon["mdi"]}\n')
-    return "".join(lines)
-
-
-def gen_button_template_options(data):
-    """YAML select option names for button icon picker."""
-    lines = []
-    for icon in data["icons"]:
-        lines.append(f'      - "{icon["name"]}"\n')
     return "".join(lines)
 
 
@@ -132,12 +123,6 @@ def sync(check_only=False):
             "GENERATED:ICONS START",
             "GENERATED:ICONS END",
             gen_icons_yaml_glyphs,
-        ),
-        (
-            TARGETS["button_template"],
-            "GENERATED:ICONS START",
-            "GENERATED:ICONS END",
-            gen_button_template_options,
         ),
         (
             TARGETS["sensors"],

@@ -8,6 +8,7 @@ font:
     id: statistics_font
     size: 48
     bpp: 4
+    glyphs: "0123456789.-°/%kWhVAW "
 
   # Main page: button labels
   - file: "gfonts://Roboto"
@@ -19,7 +20,7 @@ font:
   - file: "gfonts://Roboto"
     id: clockbar_font
     size: 20
-    bpp: 8
+    bpp: 4
 
   # Setup screens: titles (40px light)
   - file: "gfonts://Roboto@Light"
