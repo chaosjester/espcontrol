@@ -607,10 +607,10 @@ esphome:
                   lv_obj_add_event_cb(sb_btn, [](lv_event_t *e) {
                     std::string *en = (std::string *)lv_event_get_user_data(e);
                     if (en && !en->empty()) {
-                      api::HomeassistantActionResponse resp;
+                      api::HomeassistantActionRequest resp;
                       resp.action = "homeassistant.toggle";
                       resp.is_event = false;
-                      resp.data.push_back(api::HomeassistantActionMap{std::string("entity_id"), std::string(*en)});
+                      resp.data.push_back(api::HomeassistantServiceMap{std::string("entity_id"), std::string(*en)});
                       api::global_api_server->send_homeassistant_action(resp);
                     }
                   }, LV_EVENT_CLICKED, eid);
