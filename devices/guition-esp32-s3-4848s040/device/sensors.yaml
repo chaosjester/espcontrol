@@ -69,6 +69,11 @@ esphome:
                 start = comma + 1;
               }
             }
+            for (int p = 0; p < NUM_SLOTS; p++) {
+              if (positions[p] > 0 && is_double[positions[p] - 1] && p + COLS < NUM_SLOTS) {
+                positions[p + COLS] = 0;
+              }
+            }
 
             // --- Universal button colors ---
             std::string on_hex = id(button_on_color).state;

@@ -2140,6 +2140,8 @@
         btn.disabled = false;
         btn.textContent = "Apply Configuration";
       });
+      clearTimeout(migrationTimer);
+      migrationTimer = setTimeout(scheduleMigration, 5000);
     });
 
     source.addEventListener("error", function () {
@@ -2153,7 +2155,7 @@
 
     var sseHandlers = {
       "text-button_order": function (val) {
-        orderReceived = true;
+        orderReceived = !!(val && val.trim());
         state.grid = parseOrder(val);
         state.selectedSlots = state.selectedSlots.filter(function (s) {
           return state.grid.indexOf(s) !== -1;
@@ -2257,7 +2259,6 @@
             } else {
               renderButtonSettings();
             }
-            scheduleMigration();
           }
         },
       },
