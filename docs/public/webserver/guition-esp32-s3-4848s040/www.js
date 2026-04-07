@@ -16,6 +16,7 @@
     Auto: "cog",
     // --- GENERATED:ICONS START ---
     Account: "account",
+    "Arrow Left": "arrow-left",
     "Air Conditioner": "air-conditioner",
     "Air Filter": "air-filter",
     "Air Purifier": "air-purifier",
@@ -56,6 +57,7 @@
     CCTV: "cctv",
     "Ceiling Fan": "ceiling-fan",
     "Ceiling Light": "ceiling-light",
+    "Chevron Right": "chevron-right",
     Chandelier: "chandelier",
     Clock: "clock-outline",
     "Coffee Maker": "coffee-maker",
@@ -491,7 +493,25 @@
     "border-radius:6px;padding:8px 14px;font-size:.8rem;font-weight:500;cursor:pointer;" +
     "font-family:inherit;transition:background .2s;white-space:nowrap}" +
     ".sp-fw-btn:hover{background:var(--border)}" +
-    ".sp-fw-btn:disabled{opacity:.4;cursor:not-allowed}";
+    ".sp-fw-btn:disabled{opacity:.4;cursor:not-allowed}" +
+
+    // Subpage breadcrumb
+    ".sp-breadcrumb{display:flex;align-items:center;gap:6px;padding:8px var(--gap) 0;" +
+    "font-size:.85rem;color:var(--text2)}" +
+    ".sp-breadcrumb-link{color:var(--accent);cursor:pointer;text-decoration:none}" +
+    ".sp-breadcrumb-link:hover{text-decoration:underline}" +
+    ".sp-breadcrumb-sep{color:var(--text2)}" +
+    ".sp-breadcrumb-current{color:var(--text)}" +
+
+    // Subpage back button in preview
+    ".sp-back-btn{border-radius:1.67cqw;padding:2.92cqw;display:flex;flex-direction:column;" +
+    "justify-content:space-between;box-sizing:border-box;border:2px solid transparent;" +
+    "position:relative;background:#222;opacity:.6}" +
+    ".sp-back-btn .sp-btn-icon{font-size:9.58cqw;line-height:1;color:#fff}" +
+    ".sp-back-btn .sp-btn-label{font-size:3.96cqw;line-height:1.2;color:#fff}" +
+
+    // Subpage chevron overlay on home buttons
+    ".sp-subpage-badge{position:absolute;bottom:2.08cqw;right:2.08cqw;font-size:4cqw;opacity:.5}";
 
   var state = {
     grid: [],
@@ -518,11 +538,15 @@
     autoUpdate: true,
     updateFrequency: "Daily",
     updateFreqOptions: ["Hourly", "Daily", "Weekly", "Monthly"],
+    subpages: {},
+    editingSubpage: null,
+    subpageSelectedSlots: [],
+    subpageLastClicked: -1,
   };
 
   for (var i = 0; i < NUM_SLOTS; i++) {
     state.grid.push(0);
-    state.buttons.push({ entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "" });
+    state.buttons.push({ entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "", type: "" });
   }
 
   var els = {};
@@ -652,6 +676,139 @@
     return ae && els.buttonSettings && els.buttonSettings.contains(ae);
   }
 
+  // ── Subpage helpers ──────────────────────────────────────────────────
+
+  function parseSubpageConfig(json) {
+    if (!json || !json.trim()) return { order: [], buttons: [] };
+    try {
+      var d = JSON.parse(json);
+      var buttons = [];
+      if (Array.isArray(d.b)) {
+        for (var i = 0; i < d.b.length; i++) {
+          var sb = d.b[i];
+          buttons.push({
+            entity: sb.e || "",
+            label: sb.l || "",
+            icon: sb.i || "Auto",
+            icon_on: sb.io || "Auto",
+            sensor: sb.s || "",
+            unit: sb.su || "",
+          });
+        }
+      }
+      var order = [];
+      if (d.o) {
+        var parts = d.o.split(",");
+        for (var i = 0; i < parts.length; i++) {
+          var s = parts[i].trim();
+          if (s) order.push(s);
+        }
+      }
+      return { order: order, buttons: buttons };
+    } catch (_) {
+      return { order: [], buttons: [] };
+    }
+  }
+
+  function serializeSubpageConfig(sp) {
+    if (!sp || !sp.buttons || sp.buttons.length === 0) return "";
+    var b = [];
+    for (var i = 0; i < sp.buttons.length; i++) {
+      var btn = sp.buttons[i];
+      b.push({
+        e: btn.entity || "",
+        l: btn.label || "",
+        i: btn.icon || "Auto",
+        io: btn.icon_on || "Auto",
+        s: btn.sensor || "",
+        su: btn.unit || "",
+      });
+    }
+    return JSON.stringify({ o: sp.order.join(","), b: b });
+  }
+
+  function getSubpage(homeSlot) {
+    if (!state.subpages[homeSlot]) {
+      state.subpages[homeSlot] = { order: [], buttons: [], grid: [], sizes: {} };
+    }
+    return state.subpages[homeSlot];
+  }
+
+  function buildSubpageGrid(sp) {
+    var maxPos = NUM_SLOTS - 1;
+    var grid = [];
+    for (var i = 0; i < maxPos; i++) grid.push(0);
+    sp.sizes = sp.sizes || {};
+    if (sp.order.length > 0) {
+      for (var i = 0; i < sp.order.length && i < maxPos; i++) {
+        var s = sp.order[i];
+        var dbl = s.charAt(s.length - 1) === "d";
+        var n = parseInt(s, 10);
+        if (n >= 1 && n <= sp.buttons.length && !isNaN(n)) {
+          grid[i] = n;
+          if (dbl) sp.sizes[n] = 2;
+        }
+      }
+      for (var i = 0; i < maxPos; i++) {
+        if (grid[i] > 0 && sp.sizes[grid[i]] === 2) {
+          var below = i + GRID_COLS;
+          if (below < maxPos) grid[below] = -1;
+        }
+      }
+    }
+    sp.grid = grid;
+    return grid;
+  }
+
+  function serializeSubpageGrid(sp) {
+    var grid = sp.grid;
+    var last = -1;
+    for (var i = grid.length - 1; i >= 0; i--) {
+      if (grid[i] > 0) { last = i; break; }
+    }
+    if (last < 0) return [];
+    var order = [];
+    for (var i = 0; i <= last; i++) {
+      if (grid[i] <= 0) { order.push(""); continue; }
+      order.push(grid[i] + (sp.sizes[grid[i]] === 2 ? "d" : ""));
+    }
+    return order;
+  }
+
+  function enterSubpage(homeSlot) {
+    state.editingSubpage = homeSlot;
+    state.subpageSelectedSlots = [];
+    state.subpageLastClicked = -1;
+    var sp = getSubpage(homeSlot);
+    buildSubpageGrid(sp);
+    renderPreview();
+    renderButtonSettings();
+  }
+
+  function exitSubpage() {
+    state.editingSubpage = null;
+    state.subpageSelectedSlots = [];
+    state.subpageLastClicked = -1;
+    renderPreview();
+    renderButtonSettings();
+  }
+
+  function saveSubpageConfig(homeSlot) {
+    var sp = getSubpage(homeSlot);
+    sp.order = serializeSubpageGrid(sp);
+    var json = serializeSubpageConfig(sp);
+    postText("Subpage " + homeSlot + " Config", json);
+  }
+
+  function subpageFirstFreeSlot(sp) {
+    var used = {};
+    sp.grid.forEach(function (s) { if (s > 0) used[s] = true; });
+    for (var i = 1; i <= sp.buttons.length + 1; i++) {
+      if (!used[i]) return i;
+    }
+    return sp.buttons.length + 1;
+  }
+
   function bindTextPost(input, postName, opts) {
     input.addEventListener("blur", function () {
       if (opts && opts.onBlur) opts.onBlur(this.value);
@@ -777,9 +934,16 @@
     els.clock = wrap.querySelector(".sp-clock");
     els.previewMain = wrap.querySelector(".sp-main");
 
+    var breadcrumb = document.createElement("div");
+    breadcrumb.className = "sp-breadcrumb";
+    breadcrumb.style.display = "none";
+    page.appendChild(breadcrumb);
+    els.breadcrumb = breadcrumb;
+
     var hint = document.createElement("div");
     hint.className = "sp-hint";
     hint.textContent = "tap to configure \u2022 shift/ctrl+tap to multi-select \u2022 right click to manage";
+    els.previewHint = hint;
     page.appendChild(hint);
 
     // Button settings (shown when a preview button is selected)
@@ -1240,6 +1404,15 @@
     var main = els.previewMain;
     main.innerHTML = "";
 
+    if (state.editingSubpage) {
+      renderSubpagePreview(main);
+      return;
+    }
+
+    // Hide breadcrumb and show hint when on home
+    if (els.breadcrumb) els.breadcrumb.style.display = "none";
+    if (els.previewHint) els.previewHint.style.display = "";
+
     for (var pos = 0; pos < NUM_SLOTS; pos++) {
       var slot = state.grid[pos];
 
@@ -1250,19 +1423,23 @@
         var iconName = resolveIcon(slot);
         var label = b.label || b.entity || "Configure";
         var color = state.offColor;
+        var isSubpage = b.type === "subpage";
 
         var btn = document.createElement("div");
         btn.className = "sp-btn" + (state.sizes[slot] === 2 ? " sp-btn-double" : "") + (state.selectedSlots.indexOf(slot) !== -1 ? " sp-selected" : "");
         btn.style.backgroundColor = "#" + (color.length === 6 ? color : "313131");
         btn.draggable = true;
         btn.setAttribute("data-pos", pos);
-        var hasWhenOn = b.sensor || (b.icon_on && b.icon_on !== "Auto");
+        var hasWhenOn = !isSubpage && (b.sensor || (b.icon_on && b.icon_on !== "Auto"));
         var badgeIcon = b.sensor ? "gauge" : "swap-horizontal";
         var sensorBadge = hasWhenOn
           ? '<span class="sp-sensor-badge mdi mdi-' + badgeIcon + '"></span>'
           : '';
+        var subpageBadge = isSubpage
+          ? '<span class="sp-subpage-badge mdi mdi-chevron-right"></span>'
+          : '';
         btn.innerHTML =
-          sensorBadge +
+          sensorBadge + subpageBadge +
           '<span class="sp-btn-icon mdi mdi-' + iconName + '"></span>' +
           '<span class="sp-btn-label">' + escHtml(label) + "</span>";
         (function (s, p) {
@@ -1320,11 +1497,117 @@
     }
   }
 
+  function renderSubpagePreview(main) {
+    var homeSlot = state.editingSubpage;
+    var sp = getSubpage(homeSlot);
+    var homeBtn = state.buttons[homeSlot - 1];
+    var maxPos = NUM_SLOTS - 1;
+
+    // Show breadcrumb
+    if (els.breadcrumb) {
+      els.breadcrumb.style.display = "";
+      els.breadcrumb.innerHTML = "";
+      var homeLink = document.createElement("span");
+      homeLink.className = "sp-breadcrumb-link";
+      homeLink.textContent = "Home";
+      homeLink.addEventListener("click", exitSubpage);
+      els.breadcrumb.appendChild(homeLink);
+      var sep = document.createElement("span");
+      sep.className = "sp-breadcrumb-sep";
+      sep.textContent = " \u203A ";
+      els.breadcrumb.appendChild(sep);
+      var cur = document.createElement("span");
+      cur.className = "sp-breadcrumb-current";
+      cur.textContent = homeBtn.label || homeBtn.entity || "Subpage " + homeSlot;
+      els.breadcrumb.appendChild(cur);
+    }
+
+    // Hide hint
+    if (els.previewHint) els.previewHint.style.display = "none";
+
+    // Back button (grid position 0)
+    var backBtn = document.createElement("div");
+    backBtn.className = "sp-back-btn";
+    backBtn.innerHTML =
+      '<span class="sp-btn-icon mdi mdi-arrow-left"></span>' +
+      '<span class="sp-btn-label">Back</span>';
+    main.appendChild(backBtn);
+
+    // Subpage buttons
+    for (var pos = 0; pos < maxPos; pos++) {
+      var slot = sp.grid[pos];
+
+      if (slot === -1) continue;
+
+      if (slot > 0 && slot <= sp.buttons.length) {
+        var b = sp.buttons[slot - 1];
+        var iconName = resolveSubpageIcon(b);
+        var label = b.label || b.entity || "Configure";
+        var color = state.offColor;
+
+        var btn = document.createElement("div");
+        btn.className = "sp-btn" +
+          (sp.sizes[slot] === 2 ? " sp-btn-double" : "") +
+          (state.subpageSelectedSlots.indexOf(slot) !== -1 ? " sp-selected" : "");
+        btn.style.backgroundColor = "#" + (color.length === 6 ? color : "313131");
+        btn.setAttribute("data-pos", pos);
+        var hasWhenOn = b.sensor || (b.icon_on && b.icon_on !== "Auto");
+        var badgeIcon = b.sensor ? "gauge" : "swap-horizontal";
+        var sensorBadge = hasWhenOn
+          ? '<span class="sp-sensor-badge mdi mdi-' + badgeIcon + '"></span>'
+          : '';
+        btn.innerHTML =
+          sensorBadge +
+          '<span class="sp-btn-icon mdi mdi-' + iconName + '"></span>' +
+          '<span class="sp-btn-label">' + escHtml(label) + "</span>";
+        (function (s) {
+          btn.addEventListener("click", function () {
+            if (state.subpageSelectedSlots.length === 1 && state.subpageSelectedSlots[0] === s) {
+              state.subpageSelectedSlots = [];
+            } else {
+              state.subpageSelectedSlots = [s];
+              state.subpageLastClicked = s;
+            }
+            renderPreview();
+            renderButtonSettings();
+          });
+          btn.addEventListener("contextmenu", function (e) {
+            showSubpageContextMenu(e, s);
+          });
+        })(slot);
+        main.appendChild(btn);
+      } else {
+        var empty = document.createElement("div");
+        empty.className = "sp-empty-cell";
+        empty.setAttribute("data-pos", pos);
+        empty.innerHTML = '<span class="sp-add-icon mdi mdi-plus"></span>';
+        (function (p) {
+          empty.addEventListener("click", function () { addSubpageButton(p); });
+        })(pos);
+        main.appendChild(empty);
+      }
+    }
+  }
+
+  function resolveSubpageIcon(b) {
+    var sel = b.icon || "Auto";
+    if (sel === "Auto" && b.entity) {
+      var domain = b.entity.split(".")[0];
+      return DOMAIN_ICONS[domain] || "cog";
+    }
+    return ICON_MAP[sel] || "cog";
+  }
+
   // ── Button settings panel (shown below preview) ─────────────────────
 
   function renderButtonSettings() {
     var container = els.buttonSettings;
     container.innerHTML = "";
+
+    if (state.editingSubpage) {
+      renderSubpageButtonSettings(container);
+      return;
+    }
 
     if (state.selectedSlots.length === 0) return;
 
@@ -1347,10 +1630,46 @@
     var panel = document.createElement("div");
     panel.className = "sp-panel";
 
+    // Type selector
+    var tf = document.createElement("div");
+    tf.className = "sp-field";
+    tf.appendChild(fieldLabel("Type"));
+    var typeSelect = document.createElement("select");
+    typeSelect.className = "sp-select";
+    typeSelect.id = "sp-inp-type";
+    var typeOpts = [["", "Toggle"], ["subpage", "Subpage"]];
+    typeOpts.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o[0];
+      opt.textContent = o[1];
+      if ((b.type || "") === o[0]) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener("change", function () {
+      var newType = this.value;
+      state.buttons[slot - 1].type = newType;
+      postText("Button " + slot + " Type", newType);
+      if (newType === "subpage") {
+        state.buttons[slot - 1].entity = "";
+        state.buttons[slot - 1].sensor = "";
+        state.buttons[slot - 1].unit = "";
+        state.buttons[slot - 1].icon_on = "Auto";
+        postText("Button " + slot + " Entity", "");
+        postText("Button " + slot + " Sensor", "");
+        postText("Button " + slot + " Sensor Unit", "");
+        postText("Button " + slot + " Icon On", "Auto");
+      }
+      renderPreview();
+      renderButtonSettings();
+    });
+    tf.appendChild(typeSelect);
+    panel.appendChild(tf);
+
+    // Label field (shown for both types)
     var lf = document.createElement("div");
     lf.className = "sp-field";
     lf.appendChild(fieldLabel("Label"));
-    var labelInp = textInput("sp-inp-label", b.label, "eg Kitchen");
+    var labelInp = textInput("sp-inp-label", b.label, b.type === "subpage" ? "e.g. Lighting" : "e.g. Kitchen");
     lf.appendChild(labelInp);
     panel.appendChild(lf);
 
@@ -1359,40 +1678,266 @@
       rerender: true,
     });
 
+    if (b.type === "subpage") {
+      // Subpage mode: icon + configure button
+      var icf = document.createElement("div");
+      icf.className = "sp-field";
+      icf.appendChild(fieldLabel("Icon"));
+      var iconPicker = document.createElement("div");
+      iconPicker.className = "sp-icon-picker";
+      iconPicker.id = "sp-inp-icon-picker";
+      iconPicker.innerHTML =
+        '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[b.icon] || "cog") + '"></span>' +
+        '<input class="sp-icon-picker-input" id="sp-inp-icon" type="text" ' +
+        'placeholder="Search icons\u2026" value="' + escAttr(b.icon) + '" autocomplete="off">' +
+        '<div class="sp-icon-dropdown"></div>';
+      icf.appendChild(iconPicker);
+      panel.appendChild(icf);
+      initIconPicker(iconPicker, b.icon, slot);
+
+      var configBtn = document.createElement("button");
+      configBtn.className = "sp-action-btn";
+      configBtn.style.background = "var(--accent)";
+      configBtn.style.color = "#fff";
+      configBtn.style.width = "100%";
+      configBtn.textContent = "Configure Subpage";
+      configBtn.addEventListener("click", function () {
+        enterSubpage(slot);
+      });
+      panel.appendChild(configBtn);
+    } else {
+      // Toggle mode: entity, icon, when-on settings
+      var ef = document.createElement("div");
+      ef.className = "sp-field";
+      ef.appendChild(fieldLabel("Entity ID"));
+      var entityInp = textInput("sp-inp-entity", b.entity, "e.g. light.kitchen");
+      ef.appendChild(entityInp);
+      panel.appendChild(ef);
+
+      bindTextPost(entityInp, "Button " + slot + " Entity", {
+        onBlur: function (v) { state.buttons[slot - 1].entity = v; },
+        rerender: true,
+      });
+
+      var icf = document.createElement("div");
+      icf.className = "sp-field";
+      icf.appendChild(fieldLabel("Icon"));
+      var iconPicker = document.createElement("div");
+      iconPicker.className = "sp-icon-picker";
+      iconPicker.id = "sp-inp-icon-picker";
+      iconPicker.innerHTML =
+        '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[b.icon] || "cog") + '"></span>' +
+        '<input class="sp-icon-picker-input" id="sp-inp-icon" type="text" ' +
+        'placeholder="Search icons\u2026" value="' + escAttr(b.icon) + '" autocomplete="off">' +
+        '<div class="sp-icon-dropdown"></div>';
+      icf.appendChild(iconPicker);
+      panel.appendChild(icf);
+
+      initIconPicker(iconPicker, b.icon, slot);
+
+      var hasIconOn = b.icon_on && b.icon_on !== "Auto";
+      var hasSensor = !!b.sensor;
+      var whenOnEnabled = hasIconOn || hasSensor || !!b._whenOnActive;
+      var whenOnMode = b._whenOnMode || (hasSensor ? "sensor" : "icon");
+
+      var whenOnToggle = toggleRow("When Entity On", "sp-inp-whenon-toggle", whenOnEnabled);
+      panel.appendChild(whenOnToggle.row);
+
+      var whenOnCond = condField();
+      if (whenOnEnabled) whenOnCond.classList.add("sp-visible");
+
+      var seg = document.createElement("div");
+      seg.className = "sp-segment";
+      var btnIcon = document.createElement("button");
+      btnIcon.type = "button";
+      btnIcon.textContent = "Replace Icon";
+      if (whenOnMode === "icon") btnIcon.classList.add("active");
+      var btnSensor = document.createElement("button");
+      btnSensor.type = "button";
+      btnSensor.textContent = "Sensor Data";
+      if (whenOnMode === "sensor") btnSensor.classList.add("active");
+      seg.appendChild(btnIcon);
+      seg.appendChild(btnSensor);
+      whenOnCond.appendChild(seg);
+
+      var iconOnSection = condField();
+      if (whenOnMode === "icon") iconOnSection.classList.add("sp-visible");
+      var ionLabel = fieldLabel("Icon When On");
+      iconOnSection.appendChild(ionLabel);
+      var iconOnPicker = document.createElement("div");
+      iconOnPicker.className = "sp-icon-picker";
+      iconOnPicker.id = "sp-inp-icon-on-picker";
+      var iconOnVal = hasIconOn ? b.icon_on : "Auto";
+      iconOnPicker.innerHTML =
+        '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[iconOnVal] || "cog") + '"></span>' +
+        '<input class="sp-icon-picker-input" id="sp-inp-icon-on" type="text" ' +
+        'placeholder="Search icons\u2026" value="' + escAttr(iconOnVal) + '" autocomplete="off">' +
+        '<div class="sp-icon-dropdown"></div>';
+      iconOnSection.appendChild(iconOnPicker);
+      whenOnCond.appendChild(iconOnSection);
+
+      initIconPicker(iconOnPicker, iconOnVal, slot, function (opt) {
+        state.buttons[slot - 1].icon_on = opt;
+        postText("Button " + slot + " Icon On", opt);
+        renderPreview();
+      });
+
+      var sensorSection = condField();
+      if (whenOnMode === "sensor") sensorSection.classList.add("sp-visible");
+      sensorSection.appendChild(fieldLabel("Sensor Entity"));
+      var sensorInp = textInput("sp-inp-sensor", b.sensor, "e.g. sensor.printer_percent_complete");
+      sensorSection.appendChild(sensorInp);
+      sensorSection.appendChild(fieldLabel("Unit"));
+      var unitInp = textInput("sp-inp-unit", b.unit, "e.g. %");
+      unitInp.className = "sp-input sp-input--narrow";
+      sensorSection.appendChild(unitInp);
+      var sensorHint = document.createElement("div");
+      sensorHint.className = "sp-field-hint";
+      sensorHint.textContent = "Show sensor value instead of icon when on";
+      sensorSection.appendChild(sensorHint);
+      whenOnCond.appendChild(sensorSection);
+
+      panel.appendChild(whenOnCond);
+
+      function setWhenOnMode(mode) {
+        whenOnMode = mode;
+        state.buttons[slot - 1]._whenOnActive = true;
+        state.buttons[slot - 1]._whenOnMode = mode;
+        btnIcon.classList.toggle("active", mode === "icon");
+        btnSensor.classList.toggle("active", mode === "sensor");
+        iconOnSection.classList.toggle("sp-visible", mode === "icon");
+        sensorSection.classList.toggle("sp-visible", mode === "sensor");
+        if (mode === "icon") {
+          sensorInp.value = "";
+          unitInp.value = "";
+          state.buttons[slot - 1].sensor = "";
+          state.buttons[slot - 1].unit = "";
+          postText("Button " + slot + " Sensor", "");
+          postText("Button " + slot + " Sensor Unit", "");
+        } else {
+          state.buttons[slot - 1].icon_on = "Auto";
+          postText("Button " + slot + " Icon On", "Auto");
+          var ionPreview = iconOnPicker.querySelector(".sp-icon-picker-preview");
+          if (ionPreview) ionPreview.className = "sp-icon-picker-preview mdi mdi-cog";
+          var ionInput = iconOnPicker.querySelector(".sp-icon-picker-input");
+          if (ionInput) ionInput.value = "Auto";
+        }
+        renderPreview();
+      }
+
+      btnIcon.addEventListener("click", function () { setWhenOnMode("icon"); });
+      btnSensor.addEventListener("click", function () { setWhenOnMode("sensor"); });
+
+      whenOnToggle.input.addEventListener("change", function () {
+        if (this.checked) {
+          state.buttons[slot - 1]._whenOnActive = true;
+          whenOnCond.classList.add("sp-visible");
+        } else {
+          state.buttons[slot - 1]._whenOnActive = false;
+          state.buttons[slot - 1]._whenOnMode = null;
+          whenOnCond.classList.remove("sp-visible");
+          sensorInp.value = "";
+          unitInp.value = "";
+          state.buttons[slot - 1].sensor = "";
+          state.buttons[slot - 1].unit = "";
+          state.buttons[slot - 1].icon_on = "Auto";
+          postText("Button " + slot + " Sensor", "");
+          postText("Button " + slot + " Sensor Unit", "");
+          postText("Button " + slot + " Icon On", "Auto");
+          renderPreview();
+        }
+      });
+
+      bindTextPost(sensorInp, "Button " + slot + " Sensor", {
+        onBlur: function (v) { state.buttons[slot - 1].sensor = v; },
+        rerender: true,
+      });
+      bindTextPost(unitInp, "Button " + slot + " Sensor Unit", {
+        onBlur: function (v) { state.buttons[slot - 1].unit = v; },
+      });
+    }
+
+    container.appendChild(panel);
+  }
+
+  // ── Subpage button settings ─────────────────────────────────────────
+
+  function renderSubpageButtonSettings(container) {
+    var homeSlot = state.editingSubpage;
+    var sp = getSubpage(homeSlot);
+
+    if (state.subpageSelectedSlots.length === 0) return;
+
+    var slot = state.subpageSelectedSlots[0];
+    if (slot < 1 || slot > sp.buttons.length) return;
+    var b = sp.buttons[slot - 1];
+
+    var title = document.createElement("div");
+    title.className = "sp-section-title";
+    title.textContent = "Subpage Button Settings";
+    container.appendChild(title);
+
+    var panel = document.createElement("div");
+    panel.className = "sp-panel";
+
+    // Label
+    var lf = document.createElement("div");
+    lf.className = "sp-field";
+    lf.appendChild(fieldLabel("Label"));
+    var labelInp = textInput("sp-sp-inp-label", b.label, "e.g. Kitchen");
+    lf.appendChild(labelInp);
+    panel.appendChild(lf);
+
+    labelInp.addEventListener("blur", function () {
+      b.label = this.value;
+      saveSubpageConfig(homeSlot);
+      renderPreview();
+    });
+    labelInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
+
+    // Entity
     var ef = document.createElement("div");
     ef.className = "sp-field";
     ef.appendChild(fieldLabel("Entity ID"));
-    var entityInp = textInput("sp-inp-entity", b.entity, "e.g. light.kitchen");
+    var entityInp = textInput("sp-sp-inp-entity", b.entity, "e.g. light.kitchen");
     ef.appendChild(entityInp);
     panel.appendChild(ef);
 
-    bindTextPost(entityInp, "Button " + slot + " Entity", {
-      onBlur: function (v) { state.buttons[slot - 1].entity = v; },
-      rerender: true,
+    entityInp.addEventListener("blur", function () {
+      b.entity = this.value;
+      saveSubpageConfig(homeSlot);
+      renderPreview();
     });
+    entityInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
 
+    // Icon
     var icf = document.createElement("div");
     icf.className = "sp-field";
     icf.appendChild(fieldLabel("Icon"));
     var iconPicker = document.createElement("div");
     iconPicker.className = "sp-icon-picker";
-    iconPicker.id = "sp-inp-icon-picker";
+    iconPicker.id = "sp-sp-icon-picker";
     iconPicker.innerHTML =
       '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[b.icon] || "cog") + '"></span>' +
-      '<input class="sp-icon-picker-input" id="sp-inp-icon" type="text" ' +
+      '<input class="sp-icon-picker-input" id="sp-sp-inp-icon" type="text" ' +
       'placeholder="Search icons\u2026" value="' + escAttr(b.icon) + '" autocomplete="off">' +
       '<div class="sp-icon-dropdown"></div>';
     icf.appendChild(iconPicker);
     panel.appendChild(icf);
 
-    initIconPicker(iconPicker, b.icon, slot);
+    initIconPicker(iconPicker, b.icon, slot, function (opt) {
+      b.icon = opt;
+      saveSubpageConfig(homeSlot);
+      renderPreview();
+    });
 
+    // Icon On
     var hasIconOn = b.icon_on && b.icon_on !== "Auto";
     var hasSensor = !!b.sensor;
     var whenOnEnabled = hasIconOn || hasSensor || !!b._whenOnActive;
     var whenOnMode = b._whenOnMode || (hasSensor ? "sensor" : "icon");
 
-    var whenOnToggle = toggleRow("When Entity On", "sp-inp-whenon-toggle", whenOnEnabled);
+    var whenOnToggle = toggleRow("When Entity On", "sp-sp-whenon-toggle", whenOnEnabled);
     panel.appendChild(whenOnToggle.row);
 
     var whenOnCond = condField();
@@ -1400,113 +1945,115 @@
 
     var seg = document.createElement("div");
     seg.className = "sp-segment";
-    var btnIcon = document.createElement("button");
-    btnIcon.type = "button";
-    btnIcon.textContent = "Replace Icon";
-    if (whenOnMode === "icon") btnIcon.classList.add("active");
-    var btnSensor = document.createElement("button");
-    btnSensor.type = "button";
-    btnSensor.textContent = "Sensor Data";
-    if (whenOnMode === "sensor") btnSensor.classList.add("active");
-    seg.appendChild(btnIcon);
-    seg.appendChild(btnSensor);
+    var btnIconSeg = document.createElement("button");
+    btnIconSeg.type = "button";
+    btnIconSeg.textContent = "Replace Icon";
+    if (whenOnMode === "icon") btnIconSeg.classList.add("active");
+    var btnSensorSeg = document.createElement("button");
+    btnSensorSeg.type = "button";
+    btnSensorSeg.textContent = "Sensor Data";
+    if (whenOnMode === "sensor") btnSensorSeg.classList.add("active");
+    seg.appendChild(btnIconSeg);
+    seg.appendChild(btnSensorSeg);
     whenOnCond.appendChild(seg);
 
-    var iconOnSection = condField();
-    if (whenOnMode === "icon") iconOnSection.classList.add("sp-visible");
-    var ionLabel = fieldLabel("Icon When On");
-    iconOnSection.appendChild(ionLabel);
-    var iconOnPicker = document.createElement("div");
-    iconOnPicker.className = "sp-icon-picker";
-    iconOnPicker.id = "sp-inp-icon-on-picker";
-    var iconOnVal = hasIconOn ? b.icon_on : "Auto";
-    iconOnPicker.innerHTML =
-      '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[iconOnVal] || "cog") + '"></span>' +
-      '<input class="sp-icon-picker-input" id="sp-inp-icon-on" type="text" ' +
-      'placeholder="Search icons\u2026" value="' + escAttr(iconOnVal) + '" autocomplete="off">' +
+    var ionSection = condField();
+    if (whenOnMode === "icon") ionSection.classList.add("sp-visible");
+    ionSection.appendChild(fieldLabel("Icon When On"));
+    var ionPicker = document.createElement("div");
+    ionPicker.className = "sp-icon-picker";
+    ionPicker.id = "sp-sp-icon-on-picker";
+    var ionVal = hasIconOn ? b.icon_on : "Auto";
+    ionPicker.innerHTML =
+      '<span class="sp-icon-picker-preview mdi mdi-' + (ICON_MAP[ionVal] || "cog") + '"></span>' +
+      '<input class="sp-icon-picker-input" id="sp-sp-inp-icon-on" type="text" ' +
+      'placeholder="Search icons\u2026" value="' + escAttr(ionVal) + '" autocomplete="off">' +
       '<div class="sp-icon-dropdown"></div>';
-    iconOnSection.appendChild(iconOnPicker);
-    whenOnCond.appendChild(iconOnSection);
+    ionSection.appendChild(ionPicker);
+    whenOnCond.appendChild(ionSection);
 
-    initIconPicker(iconOnPicker, iconOnVal, slot, function (opt) {
-      state.buttons[slot - 1].icon_on = opt;
-      postText("Button " + slot + " Icon On", opt);
+    initIconPicker(ionPicker, ionVal, slot, function (opt) {
+      b.icon_on = opt;
+      saveSubpageConfig(homeSlot);
       renderPreview();
     });
 
     var sensorSection = condField();
     if (whenOnMode === "sensor") sensorSection.classList.add("sp-visible");
     sensorSection.appendChild(fieldLabel("Sensor Entity"));
-    var sensorInp = textInput("sp-inp-sensor", b.sensor, "e.g. sensor.printer_percent_complete");
+    var sensorInp = textInput("sp-sp-inp-sensor", b.sensor, "e.g. sensor.temperature");
     sensorSection.appendChild(sensorInp);
     sensorSection.appendChild(fieldLabel("Unit"));
-    var unitInp = textInput("sp-inp-unit", b.unit, "e.g. %");
+    var unitInp = textInput("sp-sp-inp-unit", b.unit, "e.g. %");
     unitInp.className = "sp-input sp-input--narrow";
     sensorSection.appendChild(unitInp);
-    var sensorHint = document.createElement("div");
-    sensorHint.className = "sp-field-hint";
-    sensorHint.textContent = "Show sensor value instead of icon when on";
-    sensorSection.appendChild(sensorHint);
     whenOnCond.appendChild(sensorSection);
 
     panel.appendChild(whenOnCond);
 
-    function setWhenOnMode(mode) {
+    function setSpWhenOnMode(mode) {
       whenOnMode = mode;
-      state.buttons[slot - 1]._whenOnActive = true;
-      state.buttons[slot - 1]._whenOnMode = mode;
-      btnIcon.classList.toggle("active", mode === "icon");
-      btnSensor.classList.toggle("active", mode === "sensor");
-      iconOnSection.classList.toggle("sp-visible", mode === "icon");
+      b._whenOnActive = true;
+      b._whenOnMode = mode;
+      btnIconSeg.classList.toggle("active", mode === "icon");
+      btnSensorSeg.classList.toggle("active", mode === "sensor");
+      ionSection.classList.toggle("sp-visible", mode === "icon");
       sensorSection.classList.toggle("sp-visible", mode === "sensor");
       if (mode === "icon") {
         sensorInp.value = "";
         unitInp.value = "";
-        state.buttons[slot - 1].sensor = "";
-        state.buttons[slot - 1].unit = "";
-        postText("Button " + slot + " Sensor", "");
-        postText("Button " + slot + " Sensor Unit", "");
+        b.sensor = "";
+        b.unit = "";
       } else {
-        state.buttons[slot - 1].icon_on = "Auto";
-        postText("Button " + slot + " Icon On", "Auto");
-        var ionPreview = iconOnPicker.querySelector(".sp-icon-picker-preview");
-        if (ionPreview) ionPreview.className = "sp-icon-picker-preview mdi mdi-cog";
-        var ionInput = iconOnPicker.querySelector(".sp-icon-picker-input");
-        if (ionInput) ionInput.value = "Auto";
+        b.icon_on = "Auto";
       }
+      saveSubpageConfig(homeSlot);
       renderPreview();
     }
 
-    btnIcon.addEventListener("click", function () { setWhenOnMode("icon"); });
-    btnSensor.addEventListener("click", function () { setWhenOnMode("sensor"); });
+    btnIconSeg.addEventListener("click", function () { setSpWhenOnMode("icon"); });
+    btnSensorSeg.addEventListener("click", function () { setSpWhenOnMode("sensor"); });
 
     whenOnToggle.input.addEventListener("change", function () {
       if (this.checked) {
-        state.buttons[slot - 1]._whenOnActive = true;
+        b._whenOnActive = true;
         whenOnCond.classList.add("sp-visible");
       } else {
-        state.buttons[slot - 1]._whenOnActive = false;
-        state.buttons[slot - 1]._whenOnMode = null;
+        b._whenOnActive = false;
+        b._whenOnMode = null;
         whenOnCond.classList.remove("sp-visible");
-        sensorInp.value = "";
-        unitInp.value = "";
-        state.buttons[slot - 1].sensor = "";
-        state.buttons[slot - 1].unit = "";
-        state.buttons[slot - 1].icon_on = "Auto";
-        postText("Button " + slot + " Sensor", "");
-        postText("Button " + slot + " Sensor Unit", "");
-        postText("Button " + slot + " Icon On", "Auto");
+        b.sensor = "";
+        b.unit = "";
+        b.icon_on = "Auto";
+        saveSubpageConfig(homeSlot);
         renderPreview();
       }
     });
 
-    bindTextPost(sensorInp, "Button " + slot + " Sensor", {
-      onBlur: function (v) { state.buttons[slot - 1].sensor = v; },
-      rerender: true,
+    sensorInp.addEventListener("blur", function () {
+      b.sensor = this.value;
+      saveSubpageConfig(homeSlot);
+      renderPreview();
     });
-    bindTextPost(unitInp, "Button " + slot + " Sensor Unit", {
-      onBlur: function (v) { state.buttons[slot - 1].unit = v; },
+    sensorInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
+
+    unitInp.addEventListener("blur", function () {
+      b.unit = this.value;
+      saveSubpageConfig(homeSlot);
     });
+    unitInp.addEventListener("keydown", function (e) { if (e.key === "Enter") this.blur(); });
+
+    // Delete button
+    var btnRow = document.createElement("div");
+    btnRow.className = "sp-btn-row";
+    var delBtn = document.createElement("button");
+    delBtn.className = "sp-action-btn sp-delete-btn";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", function () {
+      deleteSubpageButton(slot);
+    });
+    btnRow.appendChild(delBtn);
+    panel.appendChild(btnRow);
 
     container.appendChild(panel);
   }
@@ -1902,6 +2449,7 @@
       icon_on: src.icon_on,
       sensor: src.sensor,
       unit: src.unit,
+      type: src.type || "",
     };
 
     if (state.sizes[srcSlot] === 2) state.sizes[newSlot] = 2;
@@ -1922,6 +2470,15 @@
     postText("Button " + newSlot + " Sensor Unit", src.unit);
     postText("Button " + newSlot + " Icon", src.icon || "Auto");
     postText("Button " + newSlot + " Icon On", src.icon_on || "Auto");
+    postText("Button " + newSlot + " Type", src.type || "");
+    if (src.type === "subpage" && state.subpages[srcSlot]) {
+      var spJson = serializeSubpageConfig(state.subpages[srcSlot]);
+      var spCopy = parseSubpageConfig(spJson);
+      spCopy.sizes = {};
+      buildSubpageGrid(spCopy);
+      state.subpages[newSlot] = spCopy;
+      postText("Subpage " + newSlot + " Config", spJson);
+    }
     selectButton(newSlot);
   }
 
@@ -1947,6 +2504,10 @@
     postText("Button " + slot + " Sensor Unit", "");
     postText("Button " + slot + " Icon", "Auto");
     postText("Button " + slot + " Icon On", "Auto");
+    postText("Button " + slot + " Type", "");
+    postText("Subpage " + slot + " Config", "");
+    state.buttons[slot - 1].type = "";
+    delete state.subpages[slot];
   }
 
   function deleteButtons(slots) {
@@ -1968,10 +2529,122 @@
       postText("Button " + slot + " Sensor Unit", "");
       postText("Button " + slot + " Icon", "Auto");
       postText("Button " + slot + " Icon On", "Auto");
+      postText("Button " + slot + " Type", "");
+      postText("Subpage " + slot + " Config", "");
+      state.buttons[slot - 1].type = "";
+      delete state.subpages[slot];
     });
     postText("Button Order", serializeGrid(state.grid));
     renderPreview();
     renderButtonSettings();
+  }
+
+  // ── Subpage add / delete / context menu ─────────────────────────────
+
+  function addSubpageButton(pos) {
+    var homeSlot = state.editingSubpage;
+    var sp = getSubpage(homeSlot);
+    var maxPos = NUM_SLOTS - 1;
+    var newSlot = subpageFirstFreeSlot(sp);
+    while (sp.buttons.length < newSlot) {
+      sp.buttons.push({ entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "" });
+    }
+    sp.grid[pos] = newSlot;
+    sp.order = serializeSubpageGrid(sp);
+    saveSubpageConfig(homeSlot);
+    state.subpageSelectedSlots = [newSlot];
+    state.subpageLastClicked = newSlot;
+    renderPreview();
+    renderButtonSettings();
+  }
+
+  function deleteSubpageButton(slot) {
+    var homeSlot = state.editingSubpage;
+    var sp = getSubpage(homeSlot);
+    var maxPos = NUM_SLOTS - 1;
+    for (var i = 0; i < maxPos; i++) {
+      if (sp.grid[i] === slot) {
+        sp.grid[i] = 0;
+        if (sp.sizes[slot] === 2 && i + GRID_COLS < maxPos && sp.grid[i + GRID_COLS] === -1) {
+          sp.grid[i + GRID_COLS] = 0;
+        }
+        break;
+      }
+    }
+    delete sp.sizes[slot];
+    if (slot >= 1 && slot <= sp.buttons.length) {
+      sp.buttons[slot - 1] = { entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "" };
+    }
+    sp.order = serializeSubpageGrid(sp);
+    state.subpageSelectedSlots = [];
+    state.subpageLastClicked = -1;
+    saveSubpageConfig(homeSlot);
+    renderPreview();
+    renderButtonSettings();
+  }
+
+  function showSubpageContextMenu(e, slot) {
+    e.preventDefault();
+    hideContextMenu();
+
+    ctxMenu = document.createElement("div");
+    ctxMenu.className = "sp-ctx-menu";
+
+    var homeSlot = state.editingSubpage;
+    var sp = getSubpage(homeSlot);
+    var isDbl = sp.sizes[slot] === 2;
+    var maxPos = NUM_SLOTS - 1;
+
+    var dblItem = document.createElement("div");
+    dblItem.className = "sp-ctx-item";
+    dblItem.innerHTML = '<span class="mdi mdi-arrow-expand-vertical"></span>' + (isDbl ? "Single Height" : "Double Height");
+    dblItem.addEventListener("mousedown", function (ev) {
+      ev.preventDefault();
+      hideContextMenu();
+      var slotPos = sp.grid.indexOf(slot);
+      var belowPos = slotPos + GRID_COLS;
+      if (sp.sizes[slot] === 2) {
+        delete sp.sizes[slot];
+        if (belowPos < maxPos && sp.grid[belowPos] === -1) sp.grid[belowPos] = 0;
+      } else {
+        if (belowPos >= maxPos) return;
+        if (sp.grid[belowPos] > 0) return;
+        sp.sizes[slot] = 2;
+        sp.grid[belowPos] = -1;
+      }
+      sp.order = serializeSubpageGrid(sp);
+      saveSubpageConfig(homeSlot);
+      renderPreview();
+      renderButtonSettings();
+    });
+    ctxMenu.appendChild(dblItem);
+
+    var divider = document.createElement("div");
+    divider.className = "sp-ctx-divider";
+    ctxMenu.appendChild(divider);
+
+    var delItem = document.createElement("div");
+    delItem.className = "sp-ctx-item sp-ctx-danger";
+    delItem.innerHTML = '<span class="mdi mdi-delete"></span>Delete';
+    delItem.addEventListener("mousedown", function (ev) {
+      ev.preventDefault();
+      hideContextMenu();
+      deleteSubpageButton(slot);
+    });
+    ctxMenu.appendChild(delItem);
+
+    document.body.appendChild(ctxMenu);
+
+    var menuW = ctxMenu.offsetWidth;
+    var menuH = ctxMenu.offsetHeight;
+    var x = e.clientX;
+    var y = e.clientY;
+    if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 4;
+    if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 4;
+    if (x < 0) x = 4;
+    if (y < 0) y = 4;
+    ctxMenu.style.left = x + "px";
+    ctxMenu.style.top = y + "px";
   }
 
   // ── Export / Import ─────────────────────────────────────────────────
@@ -1992,8 +2665,18 @@
           icon_on: b.icon_on,
           sensor: b.sensor,
           unit: b.unit,
+          type: b.type || "",
         };
       }),
+      subpages: (function () {
+        var sp = {};
+        for (var k in state.subpages) {
+          if (state.subpages[k] && state.subpages[k].buttons && state.subpages[k].buttons.length > 0) {
+            sp[k] = serializeSubpageConfig(state.subpages[k]);
+          }
+        }
+        return sp;
+      })(),
       settings: {
         indoor_temp_enable: state._indoorOn,
         outdoor_temp_enable: state._outdoorOn,
@@ -2052,7 +2735,7 @@
         postText("Button On Color", data.button_on_color || "FF8C00");
         postText("Button Off Color", data.button_off_color || "313131");
 
-        var empty = { entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "" };
+        var empty = { entity: "", label: "", icon: "Auto", icon_on: "Auto", sensor: "", unit: "", type: "" };
         for (var i = 0; i < NUM_SLOTS; i++) {
           var b = i < importedCount ? data.buttons[i] : empty;
           var n = i + 1;
@@ -2062,6 +2745,7 @@
           postText("Button " + n + " Sensor Unit", b.unit || "");
           postText("Button " + n + " Icon", b.icon || "Auto");
           postText("Button " + n + " Icon On", b.icon_on || "Auto");
+          postText("Button " + n + " Type", b.type || "");
 
           state.buttons[i] = {
             entity: b.entity || "",
@@ -2070,7 +2754,20 @@
             icon_on: b.icon_on || "Auto",
             sensor: b.sensor || "",
             unit: b.unit || "",
+            type: b.type || "",
           };
+        }
+
+        // Import subpage configs
+        state.subpages = {};
+        if (data.subpages) {
+          for (var k in data.subpages) {
+            var sp = parseSubpageConfig(data.subpages[k]);
+            sp.sizes = {};
+            buildSubpageGrid(sp);
+            state.subpages[k] = sp;
+            postText("Subpage " + k + " Config", data.subpages[k]);
+          }
         }
 
         var orderStr = data.button_order || "";
@@ -2145,6 +2842,9 @@
     source.addEventListener("open", function () {
       state.selectedSlots = [];
       state.lastClickedSlot = -1;
+      state.editingSubpage = null;
+      state.subpageSelectedSlots = [];
+      state.subpageLastClicked = -1;
       orderReceived = false;
       if (els.banner) els.banner.className = "sp-banner";
       els.root.querySelectorAll(".sp-apply-btn").forEach(function (btn) {
@@ -2256,6 +2956,33 @@
     };
 
     var ssePatterns = [
+      {
+        re: /^text-button_(\d+)_type$/,
+        fn: function (m, val) {
+          var slot = parseInt(m[1], 10);
+          if (slot >= 1 && slot <= NUM_SLOTS) {
+            state.buttons[slot - 1].type = val;
+            renderPreview();
+            renderButtonSettings();
+          }
+        },
+      },
+      {
+        re: /^text-subpage_(\d+)_config$/,
+        fn: function (m, val) {
+          var slot = parseInt(m[1], 10);
+          if (slot >= 1 && slot <= NUM_SLOTS) {
+            var sp = parseSubpageConfig(val);
+            sp.sizes = sp.sizes || {};
+            buildSubpageGrid(sp);
+            state.subpages[slot] = sp;
+            if (state.editingSubpage === slot) {
+              renderPreview();
+              renderButtonSettings();
+            }
+          }
+        },
+      },
       {
         re: /^text-button_(\d+)_(entity|label|sensor|sensor_unit)$/,
         fn: function (m, val) {

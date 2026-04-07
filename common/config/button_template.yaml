@@ -95,3 +95,33 @@ text:
     icon: "mdi:image-check-outline"
     web_server:
       sorting_group_id: sg_button
+
+  - platform: template
+    name: "Button ${num} Type"
+    internal: true
+    id: button_${num}_type
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    min_length: 0
+    max_length: 10
+    mode: text
+    entity_category: config
+    icon: "mdi:page-layout-body"
+    web_server:
+      sorting_group_id: sg_button
+
+  - platform: template
+    name: "Subpage ${num} Config"
+    internal: true
+    id: subpage_${num}_config
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    min_length: 0
+    max_length: 2048
+    mode: text
+    entity_category: config
+    icon: "mdi:file-tree"
+    web_server:
+      sorting_group_id: sg_button

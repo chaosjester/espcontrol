@@ -105,6 +105,7 @@ esphome:
               // --- GENERATED:ICONS START ---
               {"Account",                    "\U000F0004"},
               {"Air Conditioner",            "\U000F001B"},
+              {"Arrow Left",                 "\U000F004D"},
               {"Air Filter",                 "\U000F0D43"},
               {"Air Purifier",               "\U000F0D44"},
               {"Alarm",                      "\U000F009E"},
@@ -442,6 +443,189 @@ esphome:
                   );
                 }
               }
+            }
+
+            // --- Subpage creation ---
+            esphome::text::Text *btn_types[] = {
+              id(button_1_type),  id(button_2_type),  id(button_3_type),  id(button_4_type),  id(button_5_type),
+              id(button_6_type),  id(button_7_type),  id(button_8_type),  id(button_9_type),  id(button_10_type),
+              id(button_11_type), id(button_12_type), id(button_13_type), id(button_14_type), id(button_15_type),
+              id(button_16_type), id(button_17_type), id(button_18_type), id(button_19_type), id(button_20_type),
+            };
+            esphome::text::Text *sp_configs[] = {
+              id(subpage_1_config),  id(subpage_2_config),  id(subpage_3_config),  id(subpage_4_config),  id(subpage_5_config),
+              id(subpage_6_config),  id(subpage_7_config),  id(subpage_8_config),  id(subpage_9_config),  id(subpage_10_config),
+              id(subpage_11_config), id(subpage_12_config), id(subpage_13_config), id(subpage_14_config), id(subpage_15_config),
+              id(subpage_16_config), id(subpage_17_config), id(subpage_18_config), id(subpage_19_config), id(subpage_20_config),
+            };
+
+            static lv_coord_t sp_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+            static lv_coord_t sp_row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+            const lv_font_t *sp_icon_fnt = lv_obj_get_style_text_font(slots[0].icon_lbl, LV_PART_MAIN);
+
+            auto json_val = [](const std::string &json, const char *key) -> std::string {
+              std::string needle = std::string("\"") + key + "\":\"";
+              size_t pos = json.find(needle);
+              if (pos == std::string::npos) return "";
+              pos += needle.length();
+              size_t end = json.find('"', pos);
+              return (end != std::string::npos) ? json.substr(pos, end - pos) : "";
+            };
+
+            for (int si = 0; si < NUM_SLOTS; si++) {
+              if (btn_types[si]->state != "subpage") continue;
+              std::string cfg = sp_configs[si]->state;
+              if (cfg.empty()) continue;
+
+              std::string sp_order_str = json_val(cfg, "o");
+
+              struct SpBtn { std::string entity, label, icon; };
+              std::vector<SpBtn> sp_btns;
+              size_t arr_s = cfg.find("[");
+              size_t arr_e = cfg.rfind("]");
+              if (arr_s != std::string::npos && arr_e != std::string::npos) {
+                size_t p2 = arr_s + 1;
+                while (p2 < arr_e) {
+                  size_t os = cfg.find('{', p2);
+                  if (os == std::string::npos || os >= arr_e) break;
+                  size_t oe = cfg.find('}', os);
+                  if (oe == std::string::npos) break;
+                  std::string obj = cfg.substr(os, oe - os + 1);
+                  sp_btns.push_back({json_val(obj, "e"), json_val(obj, "l"), json_val(obj, "i")});
+                  p2 = oe + 1;
+                }
+              }
+              if (sp_btns.empty()) continue;
+
+              int sp_pos[NUM_SLOTS] = {};
+              bool sp_dbl[NUM_SLOTS] = {};
+              if (!sp_order_str.empty()) {
+                size_t gp2 = 0, st2 = 0;
+                while (st2 <= sp_order_str.length() && gp2 < (size_t)(NUM_SLOTS - 1)) {
+                  size_t cm = sp_order_str.find(',', st2);
+                  if (cm == std::string::npos) cm = sp_order_str.length();
+                  if (cm > st2) {
+                    std::string tk = sp_order_str.substr(st2, cm - st2);
+                    bool d = !tk.empty() && tk.back() == 'd';
+                    if (d) tk.pop_back();
+                    int v = atoi(tk.c_str());
+                    if (v >= 1 && v <= (int)sp_btns.size()) { sp_pos[gp2] = v; sp_dbl[v - 1] = d; }
+                  }
+                  gp2++;
+                  st2 = cm + 1;
+                }
+              }
+
+              lv_obj_t *sub_scr = lv_obj_create(NULL);
+              lv_obj_set_style_bg_color(sub_scr, lv_color_black(), LV_PART_MAIN);
+              lv_obj_set_style_bg_opa(sub_scr, LV_OPA_COVER, LV_PART_MAIN);
+              lv_obj_set_layout(sub_scr, LV_LAYOUT_GRID);
+              lv_obj_set_grid_dsc_array(sub_scr, sp_col_dsc, sp_row_dsc);
+              lv_obj_set_style_pad_top(sub_scr, 42, LV_PART_MAIN);
+              lv_obj_set_style_pad_bottom(sub_scr, 5, LV_PART_MAIN);
+              lv_obj_set_style_pad_left(sub_scr, 5, LV_PART_MAIN);
+              lv_obj_set_style_pad_right(sub_scr, 5, LV_PART_MAIN);
+              lv_obj_set_style_pad_row(sub_scr, 10, LV_PART_MAIN);
+              lv_obj_set_style_pad_column(sub_scr, 10, LV_PART_MAIN);
+              lv_obj_clear_flag(sub_scr, LV_OBJ_FLAG_SCROLLABLE);
+
+              lv_obj_t *back_btn = lv_btn_create(sub_scr);
+              lv_obj_set_style_bg_color(back_btn, lv_color_hex(0x222222), LV_PART_MAIN);
+              lv_obj_set_grid_cell(back_btn, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 0, 1);
+              lv_obj_t *bi = lv_label_create(back_btn);
+              lv_obj_set_style_text_font(bi, sp_icon_fnt, LV_PART_MAIN);
+              lv_label_set_text(bi, "\U000F004D");
+              lv_obj_align(bi, LV_ALIGN_TOP_LEFT, 0, 0);
+              lv_obj_t *bl = lv_label_create(back_btn);
+              lv_label_set_text(bl, "Back");
+              lv_obj_align(bl, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+
+              lv_obj_t *main_scr = id(main_page);
+              lv_obj_add_event_cb(back_btn, [](lv_event_t *e) {
+                lv_scr_load_anim((lv_obj_t *)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300, 0, false);
+              }, LV_EVENT_CLICKED, main_scr);
+
+              for (int gp = 0; gp < NUM_SLOTS - 1; gp++) {
+                int bn = sp_pos[gp];
+                if (bn < 1 || bn > (int)sp_btns.size()) continue;
+                auto &sb = sp_btns[bn - 1];
+                int op = gp + 1;
+                int col = op % COLS;
+                int row = op / COLS;
+                int rs = sp_dbl[bn - 1] ? 2 : 1;
+
+                lv_obj_t *sb_btn = lv_btn_create(sub_scr);
+                if (has_off) lv_obj_set_style_bg_color(sb_btn, lv_color_hex(off_val),
+                  static_cast<lv_style_selector_t>(LV_PART_MAIN) | static_cast<lv_style_selector_t>(LV_STATE_DEFAULT));
+                if (has_on) lv_obj_set_style_bg_color(sb_btn, lv_color_hex(on_val),
+                  static_cast<lv_style_selector_t>(LV_PART_MAIN) | static_cast<lv_style_selector_t>(LV_STATE_CHECKED));
+                lv_obj_set_grid_cell(sb_btn, LV_GRID_ALIGN_STRETCH, col, 1, LV_GRID_ALIGN_STRETCH, row, rs);
+
+                lv_obj_t *sil = lv_label_create(sb_btn);
+                lv_obj_set_style_text_font(sil, sp_icon_fnt, LV_PART_MAIN);
+                const char *sic = find_icon(sb.icon.c_str());
+                if ((sb.icon.empty() || sb.icon == "Auto") && !sb.entity.empty()) {
+                  std::string dom = sb.entity.substr(0, sb.entity.find('.'));
+                  if      (dom == "light")         sic = "\U000F0335";
+                  else if (dom == "switch")        sic = "\U000F0654";
+                  else if (dom == "fan")           sic = "\U000F0210";
+                  else if (dom == "lock")          sic = "\U000F033E";
+                  else if (dom == "cover")         sic = "\U000F1A2B";
+                  else if (dom == "climate")       sic = "\U000F001B";
+                  else if (dom == "media_player")  sic = "\U000F04C3";
+                  else if (dom == "camera")        sic = "\U000F0100";
+                  else if (dom == "binary_sensor") sic = "\U000F0D91";
+                }
+                lv_label_set_text(sil, sic);
+                lv_obj_align(sil, LV_ALIGN_TOP_LEFT, 0, 0);
+
+                lv_obj_t *stl = lv_label_create(sb_btn);
+                lv_obj_align(stl, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+
+                if (!sb.entity.empty()) {
+                  if (!sb.label.empty()) {
+                    lv_label_set_text(stl, sb.label.c_str());
+                  } else {
+                    lv_obj_t *tl2 = stl;
+                    api::global_api_server->subscribe_home_assistant_state(
+                      sb.entity, std::string("friendly_name"),
+                      std::function<void(const std::string &)>([tl2](const std::string &name) {
+                        lv_label_set_text(tl2, name.c_str());
+                      })
+                    );
+                  }
+
+                  lv_obj_t *bp = sb_btn;
+                  api::global_api_server->subscribe_home_assistant_state(
+                    sb.entity, {},
+                    std::function<void(const std::string &)>([bp](const std::string &state) {
+                      bool on = state == "on" || state == "open" || state == "playing" ||
+                                state == "home" || state == "unlocked";
+                      if (on) lv_obj_add_state(bp, LV_STATE_CHECKED);
+                      else lv_obj_clear_state(bp, LV_STATE_CHECKED);
+                    })
+                  );
+
+                  std::string *eid = new std::string(sb.entity);
+                  lv_obj_add_event_cb(sb_btn, [](lv_event_t *e) {
+                    std::string *en = (std::string *)lv_event_get_user_data(e);
+                    if (en && !en->empty()) {
+                      api::HomeassistantServiceResponse resp;
+                      resp.service = "homeassistant.toggle";
+                      resp.is_event = false;
+                      api::HomeassistantServiceMap m;
+                      m.key = "entity_id";
+                      m.value = *en;
+                      resp.data.push_back(m);
+                      api::global_api_server->send_homeassistant_service_call(resp);
+                    }
+                  }, LV_EVENT_CLICKED, eid);
+                } else {
+                  lv_label_set_text(stl, sb.label.empty() ? "Configure" : sb.label.c_str());
+                }
+              }
+
+              lv_obj_set_user_data(slots[si].btn, (void *)sub_scr);
             }
 
             // --- Temperature display ---

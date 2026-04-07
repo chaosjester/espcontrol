@@ -14,6 +14,8 @@ font:
     glyphs:
       # --- GENERATED:ICONS START ---
       - "\U000F0493"  # mdi-cog (Auto fallback)
+      - "\U000F004D"  # mdi-arrow-left (Back button)
+      - "\U000F0142"  # mdi-chevron-right (Subpage indicator)
       - "\U000F0004"  # mdi-account
       - "\U000F001B"  # mdi-air-conditioner
       - "\U000F0D43"  # mdi-air-filter
@@ -220,3 +222,5 @@ font:
 substitutions:
   icon_wifi: "\U000F05A9"
   icon_cog: "\U000F0493"
+  icon_arrow_left: "\U000F004D"
+  icon_chevron_right: "\U000F0142"

@@ -51,15 +51,25 @@ button:
         align: bottom_left
         id: button_${num}_text_label
         text: "Configure"
-  # Toggle the bound HA entity on press
+  # Navigate to subpage or toggle the bound HA entity on press
   on_short_click:
     - if:
         condition:
-          lambda: 'return !id(button_${num}_entity).state.empty();'
+          lambda: 'return id(button_${num}_type).state == "subpage";'
         then:
-          - homeassistant.action:
-              action: homeassistant.toggle
-              data_template:
-                entity_id: "{{ entity_id }}"
-              variables:
-                entity_id: !lambda 'return id(button_${num}_entity).state;'
+          - lambda: |-
+              lv_obj_t *sub_scr = (lv_obj_t *)lv_obj_get_user_data(id(button_${num}));
+              if (sub_scr) {
+                lv_scr_load_anim(sub_scr, LV_SCR_LOAD_ANIM_MOVE_LEFT, 300, 0, false);
+              }
+        else:
+          - if:
+              condition:
+                lambda: 'return !id(button_${num}_entity).state.empty();'
+              then:
+                - homeassistant.action:
+                    action: homeassistant.toggle
+                    data_template:
+                      entity_id: "{{ entity_id }}"
+                    variables:
+                      entity_id: !lambda 'return id(button_${num}_entity).state;'
