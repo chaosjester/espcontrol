@@ -2370,20 +2370,13 @@
         var below = cell + GRID_COLS;
         if (below < NUM_SLOTS && state.grid[below] === 0) state.grid[below] = -1;
       }
-      postText("Button " + newSlot + " Entity", e.entity);
-      postText("Button " + newSlot + " Label", e.label);
-      postText("Button " + newSlot + " Sensor", e.sensor);
-      postText("Button " + newSlot + " Sensor Unit", e.unit);
-      postText("Button " + newSlot + " Icon", e.icon || "Auto");
-      postText("Button " + newSlot + " Icon On", e.icon_on || "Auto");
-      postText("Button " + newSlot + " Type", e.type || "");
       if (e.subpageConfig) {
         var spCopy = parseSubpageConfig(e.subpageConfig);
         spCopy.sizes = {};
         buildSubpageGrid(spCopy);
         state.subpages[newSlot] = spCopy;
-        postText("Subpage " + newSlot + " Config", e.subpageConfig);
       }
+      saveButtonConfig(newSlot);
       lastSlot = newSlot;
     }
     postText("Button Order", serializeGrid(state.grid));
@@ -2601,20 +2594,13 @@
         for (var i = 0; i < NUM_SLOTS; i++) {
           var b = buttons[i];
           var n = i + 1;
-          postText("Button " + n + " Entity", b.entity || "");
-          postText("Button " + n + " Label", b.label || "");
-          postText("Button " + n + " Sensor", b.sensor || "");
-          postText("Button " + n + " Sensor Unit", b.unit || "");
-          postText("Button " + n + " Icon", b.icon || "Auto");
-          postText("Button " + n + " Icon On", b.icon_on || "Auto");
-          postText("Button " + n + " Type", b.type || "");
-
           state.buttons[i] = {
             entity: b.entity || "", label: b.label || "",
             icon: b.icon || "Auto", icon_on: b.icon_on || "Auto",
             sensor: b.sensor || "", unit: b.unit || "",
             type: b.type || "",
           };
+          saveButtonConfig(n);
         }
 
         state.subpages = {};
@@ -2626,7 +2612,7 @@
             sp.sizes = {};
             buildSubpageGrid(sp);
             state.subpages[String(newKey)] = sp;
-            postText("Subpage " + newKey + " Config", data.subpages[k]);
+            saveButtonConfig(newKey);
           }
         }
 
@@ -2818,82 +2804,29 @@
 
     var ssePatterns = [
       {
-        re: /^text-button_(\d+)_type$/,
+        re: /^text-button_(\d+)_config$/,
         fn: function (m, val) {
           var slot = parseInt(m[1], 10);
-          if (slot >= 1 && slot <= NUM_SLOTS) {
-            state.buttons[slot - 1].type = val;
-            scheduleRender();
-          }
-        },
-      },
-      {
-        re: /^text-subpage_(\d+)_config$/,
-        fn: function (m, val) {
-          var slot = parseInt(m[1], 10);
-          if (slot >= 1 && slot <= NUM_SLOTS) {
-            var sp = parseSubpageConfig(val);
+          if (slot < 1 || slot > NUM_SLOTS) return;
+          var parts = (val || "").split(";");
+          var b = state.buttons[slot - 1];
+          b.entity = parts[0] || "";
+          b.label = parts[1] || "";
+          b.icon = parts[2] || "Auto";
+          b.icon_on = parts[3] || "Auto";
+          b.sensor = parts[4] || "";
+          b.unit = parts[5] || "";
+          b.type = parts[6] || "";
+          var spCfg = parts.slice(7).join(";");
+          if (spCfg) {
+            var sp = parseSubpageConfig(spCfg);
             sp.sizes = sp.sizes || {};
             buildSubpageGrid(sp);
             state.subpages[slot] = sp;
-            if (state.editingSubpage === slot) {
-              scheduleRender();
-            }
+          } else {
+            delete state.subpages[slot];
           }
-        },
-      },
-      {
-        re: /^text-button_(\d+)_(entity|label|sensor|sensor_unit)$/,
-        fn: function (m, val) {
-          var slot = parseInt(m[1], 10);
-          var field = m[2] === "sensor_unit" ? "unit" : m[2];
-          if (slot >= 1 && slot <= NUM_SLOTS) {
-            state.buttons[slot - 1][field] = val;
-            renderPreview();
-            if (state.selectedSlots.length === 1 && state.selectedSlots[0] === slot && isSettingsFocused()) {
-              var idMap = { entity: "sp-inp-entity", label: "sp-inp-label", sensor: "sp-inp-sensor", unit: "sp-inp-unit" };
-              syncInput(document.getElementById(idMap[field]), val);
-            } else {
-              renderButtonSettings();
-            }
-          }
-        },
-      },
-      {
-        re: /^text-button_(\d+)_icon$/,
-        fn: function (m, val) {
-          var slot = parseInt(m[1], 10);
-          if (slot >= 1 && slot <= NUM_SLOTS) {
-            state.buttons[slot - 1].icon = val;
-            renderPreview();
-            if (state.selectedSlots.length === 1 && state.selectedSlots[0] === slot && isSettingsFocused()) {
-              syncInput(document.getElementById("sp-inp-icon"), val);
-              var prev = document.querySelector(".sp-icon-picker-preview");
-              if (prev) prev.className = "sp-icon-picker-preview mdi mdi-" + iconSlug(val);
-            } else {
-              renderButtonSettings();
-            }
-          }
-        },
-      },
-      {
-        re: /^text-button_(\d+)_icon_on$/,
-        fn: function (m, val) {
-          var slot = parseInt(m[1], 10);
-          if (slot >= 1 && slot <= NUM_SLOTS) {
-            state.buttons[slot - 1].icon_on = val;
-            renderPreview();
-            if (state.selectedSlots.length === 1 && state.selectedSlots[0] === slot && isSettingsFocused()) {
-              syncInput(document.getElementById("sp-inp-icon-on"), val);
-              var prev = document.getElementById("sp-inp-icon-on-picker");
-              if (prev) {
-                var p = prev.querySelector(".sp-icon-picker-preview");
-                if (p) p.className = "sp-icon-picker-preview mdi mdi-" + iconSlug(val);
-              }
-            } else {
-              renderButtonSettings();
-            }
-          }
+          scheduleRender();
         },
       },
     ];
