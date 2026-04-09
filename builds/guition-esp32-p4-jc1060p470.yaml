@@ -1,5 +1,5 @@
 substitutions:
-  name: "guition-esp32-p4-jc1060p470"
+  name: "espcontrol-jc1060p470"
   friendly_name: "Espcontrol 7inch"
 
 esphome:

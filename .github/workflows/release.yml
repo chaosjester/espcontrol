@@ -45,7 +45,7 @@ jobs:
       - name: Collect firmware files and generate manifest
         id: firmware
         run: |
-          BUILD_DIR="builds/.esphome/build/${{ matrix.slug }}/.pioenvs/${{ matrix.slug }}"
+          BUILD_DIR=$(dirname "$(find builds/.esphome/build -name firmware.factory.bin -print -quit)")
           mkdir -p output
 
           if [ ! -f "${BUILD_DIR}/firmware.factory.bin" ]; then

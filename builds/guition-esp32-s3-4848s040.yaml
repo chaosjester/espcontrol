@@ -1,5 +1,5 @@
 substitutions:
-  name: "guition-esp32-s3-4848s040"
+  name: "espcontrol-4848s040"
   friendly_name: "Guition ESP32-S3-4848S040"
 
 esphome:
