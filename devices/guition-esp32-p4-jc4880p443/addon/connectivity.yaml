@@ -18,12 +18,21 @@ globals:
     restore_value: true
     initial_value: 'false'
 
+esphome:
+  on_boot:
+    priority: 600
+    then:
+      - lambda: |-
+          std::string mac = get_mac_address();
+          wifi::WiFiAP ap;
+          ap.set_ssid("ESP_" + mac.substr(8));
+          wifi::global_wifi_component->set_ap(ap);
+
 captive_portal:
 
 wifi:
   reboot_timeout: 0s
-  ap:
-    ssid: "${friendly_name}"
+  ap: {}
   on_connect:
     - script.stop: setup_screen_dim
     - lambda: |-
