@@ -442,6 +442,8 @@
     screensaverTimeout: 300,
     brightnessDayVal: 100,
     brightnessNightVal: 75,
+    timezone: "America/New_York (GMT-5)",
+    timezoneOptions: [],
     sunrise: "",
     sunset: "",
     firmwareVersion: "",
@@ -1035,6 +1037,28 @@
     blBody.appendChild(nightSlider.wrap);
     els.setNightBrightness = nightSlider.range;
     els.setNightBrightnessVal = nightSlider.val;
+
+    var tzField = document.createElement("div");
+    tzField.className = "sp-field";
+    tzField.appendChild(fieldLabel("Timezone"));
+    var tzSelect = document.createElement("select");
+    tzSelect.className = "sp-select";
+    tzSelect.id = "sp-set-timezone";
+    if (state.timezoneOptions.length) {
+      state.timezoneOptions.forEach(function (opt) {
+        var o = document.createElement("option");
+        o.value = opt;
+        o.textContent = opt;
+        tzSelect.appendChild(o);
+      });
+    }
+    tzSelect.value = state.timezone;
+    tzSelect.addEventListener("change", function () {
+      postSelect("Screen: Timezone", this.value);
+    });
+    tzField.appendChild(tzSelect);
+    blBody.appendChild(tzField);
+    els.setTimezone = tzSelect;
 
     var sunInfo = document.createElement("div");
     sunInfo.className = "sp-sun-info";
@@ -2933,6 +2957,22 @@
           els.setNightBrightness.value = state.brightnessNightVal;
           els.setNightBrightnessVal.textContent = Math.round(state.brightnessNightVal) + "%";
         }
+      },
+      "select-screen__timezone": function (val, d) {
+        state.timezone = d.value || d.option || val || state.timezone;
+        if (d.options && Array.isArray(d.options)) {
+          state.timezoneOptions = d.options;
+          if (els.setTimezone) {
+            els.setTimezone.innerHTML = "";
+            d.options.forEach(function (opt) {
+              var o = document.createElement("option");
+              o.value = opt;
+              o.textContent = opt;
+              els.setTimezone.appendChild(o);
+            });
+          }
+        }
+        if (els.setTimezone) els.setTimezone.value = state.timezone;
       },
       "text_sensor-screen__sunrise": function (val) {
         state.sunrise = val;
