@@ -209,6 +209,7 @@
     "cursor:pointer;transition:all .2s;box-sizing:border-box;border:2px solid transparent;" +
     "position:relative}" +
     ".sp-btn:hover{filter:brightness(1.15)}" +
+    ".sp-drag-active .sp-btn:hover{filter:none}" +
     ".sp-btn.sp-selected{border-color:var(--accent)}" +
     ".sp-btn-icon{font-size:var(--btn-icon);line-height:1;color:#fff}" +
     ".sp-btn-label{font-size:var(--btn-label);line-height:1.2;color:#fff;" +
@@ -219,6 +220,7 @@
     "border-radius:var(--empty-r);display:flex;align-items:center;justify-content:center;" +
     "cursor:pointer;transition:border-color .2s}" +
     ".sp-empty-cell:hover{border-color:var(--accent)}" +
+    ".sp-drag-active .sp-empty-cell:hover{border-color:rgba(255,255,255,.15)}" +
     ".sp-empty-cell .sp-add-icon{font-size:5cqw;color:rgba(255,255,255,.2)}" +
     ".sp-empty-cell.sp-drop-placeholder{border:2px dashed rgba(92,156,245,.5) !important;" +
     "background:rgba(92,156,245,.08) !important;cursor:default;pointer-events:none}" +
@@ -2052,6 +2054,7 @@
       dragIsSubpage = !!state.editingSubpage;
       didDrag = true;
       dragEnterCount = 0;
+      container.classList.add("sp-drag-active");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", String(pos));
       if (CFG.dragAnimation) {
@@ -2066,6 +2069,7 @@
       dragEnterCount = 0;
       clearPlaceholder();
       if (dragSrcEl) { dragSrcEl.classList.remove("sp-dragging"); dragSrcEl = null; }
+      setTimeout(function () { container.classList.remove("sp-drag-active"); }, 50);
     });
 
     // Drop zone
