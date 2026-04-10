@@ -49,37 +49,7 @@ You can move buttons around by cutting and pasting. Right-click a button, choose
 
 ### Button settings
 
-When you tap a button to select it, a settings panel appears below the preview:
-
-- **Type** — choose **Toggle** (the default — turns a device on and off) or **Subpage** (opens a page of more buttons). See [Buttons & Icons](/features/buttons-and-icons#button-types) for more.
-- **Label** — a custom name for the button. Leave it blank to use the device's name from Home Assistant.
-- **Entity** — which Home Assistant device the button controls (for example, `light.living_room`). You can find this in Home Assistant under **Settings > Devices & Services**. Only shown for Toggle buttons.
-- **Icon** — pick from hundreds of icons, or choose **Auto** to let the panel pick one based on the device type (lights get a lightbulb, fans get a fan, and so on).
-- **When Entity On** — an optional setting with two choices:
-  - **Replace Icon** — show a different icon when the device is switched on.
-  - **Sensor Data** — show a live reading on the button when the device is on (for example, a temperature or power usage). Enter the sensor name and the unit to display (like `°C` or `%`).
-- **Configure Subpage** — opens the subpage editor. Only shown for Subpage buttons.
-
-### Subpages
-
-A **Subpage** button works like a folder — tapping it on the panel opens a new page of buttons. This is handy for grouping related controls together (for example, all the lights in one room) without cluttering the home screen.
-
-Each subpage has its own set of button spaces, one fewer than the home screen (because the first space is used for a **Back** button that returns you to the home screen).
-
-To set up a subpage:
-
-1. Select a button and change its type to **Subpage**.
-2. Click **Configure Subpage**, or right-click the button and choose **Edit Subpage**.
-3. The preview switches to the subpage. Set up buttons here the same way you would on the home screen.
-4. Click the back arrow to return to the home screen.
-
-Subpage buttons show a small **arrow badge** on the home screen so you can tell them apart from regular buttons.
-
-### Double-height buttons
-
-You can make any button **twice as tall**, spanning two rows instead of one. Right-click the button and choose **Double Height**. To change it back, right-click and choose **Single Height**.
-
-If there's already a button in the space below, it gets moved to the next available space automatically.
+When you tap a button to select it, a settings panel appears below the preview where you can choose its type, icon, label, and which device it controls. See [Buttons & Icons](/features/buttons-and-icons) for a full guide to button types, icons, subpages, and sensor readouts.
 
 ## Settings tab
 

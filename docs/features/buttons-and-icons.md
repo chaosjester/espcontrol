@@ -45,14 +45,6 @@ You can make any button **twice as tall**, spanning two rows instead of one. Rig
 
 To change it back, right-click and choose **Single Height**. If there's already a button in the space below, it gets moved to the next available space automatically.
 
-## Shared button settings
-
-These settings apply to all buttons on the panel:
-
-- **On colour** — the colour a button shows when its device is switched on. Default: orange.
-- **Off colour** — the colour a button shows when its device is switched off. Default: dark grey.
-- **Button order** — you can drag and drop buttons to rearrange them. If you drop a button onto a space that's already taken, the existing button shifts to the next available space.
-
 ## Auto icons
 
 When you set a button's icon to **Auto**, the panel picks an appropriate icon based on what kind of device it controls:

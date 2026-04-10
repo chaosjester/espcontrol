@@ -10,39 +10,20 @@ The Settings tab in the [Setup](/features/setup) lets you adjust how your panel 
 
 ## Appearance
 
-- **On colour** — the colour buttons show when a device is switched on. Use the colour picker or type a colour code (for example, `FF8C00` for orange).
-- **Off colour** — the colour buttons show when a device is switched off.
+Customise the on and off button colours. See [Appearance](/features/appearance) for details.
 
 ## Brightness
 
-- **Daytime brightness** — how bright the screen is during the day (10%–100%).
-- **Nighttime brightness** — how bright the screen is at night (10%–100%).
-- **Sunrise / Sunset** — shows when the brightness will change each day. These update automatically based on your timezone.
+Set daytime and nighttime screen brightness levels. The panel switches between them automatically based on sunrise and sunset. See [Backlight Schedule](/features/backlight-schedule) for details.
 
-## Temperature
+## Temperature & Screensaver
 
-- **Indoor temperature** — turn this on and choose which temperature sensor from Home Assistant to display (for example, a room thermometer).
-- **Outdoor temperature** — same as above, but for an outdoor sensor.
-
-Both temperatures appear in the top bar of the panel. You can enable one, both, or neither.
-
-## Screensaver
-
-The screensaver dims the screen and shows a gentle animation when the panel isn't being used. There are two ways to control it:
-
-- **Timer** — the screensaver turns on after a set amount of idle time. Choose from **5, 10, 15, 20, 30, or 45 minutes**, or **1 hour**. The default is 5 minutes.
-- **Sensor** — the screensaver is controlled by a motion or presence sensor. When the sensor detects someone nearby, the screen wakes up. When nobody is detected, the screen goes to sleep. Enter the name of your motion sensor from Home Assistant (for example, `binary_sensor.hallway_presence`).
-
-Touching the screen always wakes it up, regardless of which mode you use.
+Show indoor and outdoor temperatures in the top bar, and choose how the screensaver activates (timer or presence sensor). See [Display & Screensaver](/features/display-screensaver) for details.
 
 ## Backup
 
-- **Export** — saves your entire setup (buttons, subpages, colours, and display settings) as a file you can keep as a backup.
-- **Import** — loads a previously saved file to restore your setup. If you're loading a backup from a different-sized panel, the buttons are rearranged to fit automatically.
+Export your setup as a file or import a previous backup. See [Backup](/features/backup) for details.
 
 ## Firmware
 
-- **Version** — which version of the software your panel is running.
-- **Check for Update** — press this to look for a newer version right now.
-- **Auto Update** — turn this on to let the panel update itself automatically.
-- **Update Frequency** — how often to check: Hourly, Daily, Weekly, or Monthly. Only shown when Auto Update is on.
+Check the current version, enable automatic updates, and set how often the panel checks for new firmware. See [Firmware Updates](/features/firmware-updates) for details.
