@@ -447,7 +447,7 @@ esphome:
                     lv_style_transition_dsc_init(&push_trans, push_props, lv_anim_path_ease_out, 400, 0, NULL);
                     push_trans_inited = true;
                   }
-                  lv_obj_set_style_transition(s.btn, &push_trans, LV_PART_MAIN | LV_STATE_DEFAULT);
+                  lv_obj_set_style_transition(s.btn, &push_trans, static_cast<lv_style_selector_t>(LV_PART_MAIN) | LV_STATE_DEFAULT);
                 }
               }
             }
