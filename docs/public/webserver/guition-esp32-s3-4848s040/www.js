@@ -131,6 +131,7 @@
     labelPlaceholder: "e.g. Doorbell",
     onSelect: function (b) {
       b.entity = ""; b.sensor = ""; b.unit = ""; b.icon_on = "Auto";
+      b.icon = "Gesture Tap";
     },
     renderSettings: function (panel, b, slot, helpers) {
       panel.appendChild(helpers.makeIconPicker(
@@ -156,7 +157,7 @@
     renderSettings: function (panel, b, slot, helpers) {
       var sf = document.createElement("div");
       sf.className = "sp-field";
-      sf.appendChild(helpers.fieldLabel("Sensor Entity"));
+      sf.appendChild(helpers.fieldLabel("Sensor Entity", helpers.idPrefix + "sensor"));
       var sensorInp = helpers.textInput(helpers.idPrefix + "sensor", b.sensor, "e.g. sensor.living_room_temperature");
       sf.appendChild(sensorInp);
       panel.appendChild(sf);
@@ -164,7 +165,7 @@
 
       var uf = document.createElement("div");
       uf.className = "sp-field";
-      uf.appendChild(helpers.fieldLabel("Unit"));
+      uf.appendChild(helpers.fieldLabel("Unit", helpers.idPrefix + "unit"));
       var unitInp = helpers.textInput(helpers.idPrefix + "unit", b.unit, "e.g. \u00B0C");
       unitInp.className = "sp-input sp-input--narrow";
       uf.appendChild(unitInp);
@@ -1117,7 +1118,7 @@
 
     var tzField = document.createElement("div");
     tzField.className = "sp-field";
-    tzField.appendChild(fieldLabel("Timezone"));
+    tzField.appendChild(fieldLabel("Timezone", "sp-set-timezone"));
     var tzSelect = document.createElement("select");
     tzSelect.className = "sp-select";
     tzSelect.id = "sp-set-timezone";
@@ -1175,9 +1176,11 @@
     var timerBtn = document.createElement("button");
     timerBtn.textContent = "Timer";
     timerBtn.type = "button";
+    timerBtn.tabIndex = -1;
     var sensorBtn = document.createElement("button");
     sensorBtn.textContent = "Sensor";
     sensorBtn.type = "button";
+    sensorBtn.tabIndex = -1;
     segment.appendChild(timerBtn);
     segment.appendChild(sensorBtn);
     ssBody.appendChild(segment);
@@ -1341,10 +1344,11 @@
     return card;
   }
 
-  function fieldLabel(text) {
+  function fieldLabel(text, forId) {
     var el = document.createElement("label");
     el.className = "sp-field-label";
     el.textContent = text;
+    if (forId) el.htmlFor = forId;
     return el;
   }
 
@@ -1652,7 +1656,7 @@
     function makeIconPicker(pickerId, inputId, currentVal, onSelect) {
       var icf = document.createElement("div");
       icf.className = "sp-field";
-      icf.appendChild(fieldLabel("Icon"));
+      icf.appendChild(fieldLabel("Icon", inputId));
       var picker = document.createElement("div");
       picker.className = "sp-icon-picker";
       if (pickerId) picker.id = pickerId;
@@ -1676,7 +1680,7 @@
       }
       var tf = document.createElement("div");
       tf.className = "sp-field";
-      tf.appendChild(fieldLabel("Type"));
+      tf.appendChild(fieldLabel("Type", "sp-inp-type"));
       var typeSelect = document.createElement("select");
       typeSelect.className = "sp-select";
       typeSelect.id = "sp-inp-type";
@@ -1703,7 +1707,7 @@
     // Label
     var lf = document.createElement("div");
     lf.className = "sp-field";
-    lf.appendChild(fieldLabel("Label"));
+    lf.appendChild(fieldLabel("Label", idPrefix + "label"));
     var labelPlaceholder = (typeDef && typeDef.labelPlaceholder) || "e.g. Kitchen";
     var labelInp = textInput(idPrefix + "label", b.label, labelPlaceholder);
     lf.appendChild(labelInp);
@@ -1725,7 +1729,7 @@
       // Toggle (home or subpage): entity, icon, when-on
       var ef = document.createElement("div");
       ef.className = "sp-field";
-      ef.appendChild(fieldLabel("Entity ID"));
+      ef.appendChild(fieldLabel("Entity ID", idPrefix + "entity"));
       var entityInp = textInput(idPrefix + "entity", b.entity, "e.g. light.kitchen");
       ef.appendChild(entityInp);
       panel.appendChild(ef);
@@ -1753,10 +1757,12 @@
       seg.className = "sp-segment";
       var btnIcon = document.createElement("button");
       btnIcon.type = "button";
+      btnIcon.tabIndex = -1;
       btnIcon.textContent = "Replace Icon";
       if (whenOnMode === "icon") btnIcon.classList.add("active");
       var btnSensor = document.createElement("button");
       btnSensor.type = "button";
+      btnSensor.tabIndex = -1;
       btnSensor.textContent = "Sensor Data";
       if (whenOnMode === "sensor") btnSensor.classList.add("active");
       seg.appendChild(btnIcon);
@@ -1766,7 +1772,7 @@
       // Icon-on section
       var iconOnSection = condField();
       if (whenOnMode === "icon") iconOnSection.classList.add("sp-visible");
-      var ionLabel = fieldLabel("Icon When On");
+      var ionLabel = fieldLabel("Icon When On", idPrefix + "icon-on");
       iconOnSection.appendChild(ionLabel);
       var iconOnVal = hasIconOn ? b.icon_on : "Auto";
       var iconOnPicker = document.createElement("div");
@@ -1789,10 +1795,10 @@
       // Sensor section
       var sensorSection = condField();
       if (whenOnMode === "sensor") sensorSection.classList.add("sp-visible");
-      sensorSection.appendChild(fieldLabel("Sensor Entity"));
+      sensorSection.appendChild(fieldLabel("Sensor Entity", idPrefix + "sensor"));
       var sensorInp = textInput(idPrefix + "sensor", b.sensor, "e.g. sensor.printer_percent_complete");
       sensorSection.appendChild(sensorInp);
-      sensorSection.appendChild(fieldLabel("Unit"));
+      sensorSection.appendChild(fieldLabel("Unit", idPrefix + "unit"));
       var unitInp = textInput(idPrefix + "unit", b.unit, "e.g. %");
       unitInp.className = "sp-input sp-input--narrow";
       sensorSection.appendChild(unitInp);
@@ -2003,6 +2009,11 @@
         e.preventDefault();
         var visible = getVisible();
         if (highlighted >= 0 && highlighted < visible.length) {
+          selectOpt(visible[highlighted]._optName);
+        }
+      } else if (e.key === "Tab") {
+        var visible = getVisible();
+        if (picker.classList.contains("sp-open") && highlighted >= 0 && highlighted < visible.length) {
           selectOpt(visible[highlighted]._optName);
         }
       } else if (e.key === "Escape") {

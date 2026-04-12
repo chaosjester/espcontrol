@@ -4,6 +4,7 @@ registerButtonType("push", {
   labelPlaceholder: "e.g. Doorbell",
   onSelect: function (b) {
     b.entity = ""; b.sensor = ""; b.unit = ""; b.icon_on = "Auto";
+    b.icon = "Gesture Tap";
   },
   renderSettings: function (panel, b, slot, helpers) {
     panel.appendChild(helpers.makeIconPicker(

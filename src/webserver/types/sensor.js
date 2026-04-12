@@ -10,7 +10,7 @@ registerButtonType("sensor", {
   renderSettings: function (panel, b, slot, helpers) {
     var sf = document.createElement("div");
     sf.className = "sp-field";
-    sf.appendChild(helpers.fieldLabel("Sensor Entity"));
+    sf.appendChild(helpers.fieldLabel("Sensor Entity", helpers.idPrefix + "sensor"));
     var sensorInp = helpers.textInput(helpers.idPrefix + "sensor", b.sensor, "e.g. sensor.living_room_temperature");
     sf.appendChild(sensorInp);
     panel.appendChild(sf);
@@ -18,7 +18,7 @@ registerButtonType("sensor", {
 
     var uf = document.createElement("div");
     uf.className = "sp-field";
-    uf.appendChild(helpers.fieldLabel("Unit"));
+    uf.appendChild(helpers.fieldLabel("Unit", helpers.idPrefix + "unit"));
     var unitInp = helpers.textInput(helpers.idPrefix + "unit", b.unit, "e.g. \u00B0C");
     unitInp.className = "sp-input sp-input--narrow";
     uf.appendChild(unitInp);
