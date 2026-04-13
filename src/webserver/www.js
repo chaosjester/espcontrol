@@ -431,6 +431,7 @@
     subpageSelectedSlots: [],
     subpageLastClicked: -1,
     clipboard: null,
+    weatherApiKey: "",
     weatherLat: "",
     weatherLon: "",
     weatherLocation: "",
@@ -1080,6 +1081,12 @@
     config.appendChild(makeCollapsibleCard("Temperature", tempBody, true));
 
     var wxBody = document.createElement("div");
+
+    wxBody.appendChild(fieldLabel("API Key"));
+    var wxApiKeyInp = textInput("sp-set-wx-apikey", state.weatherApiKey, "Pirate Weather API key");
+    wxBody.appendChild(wxApiKeyInp);
+    bindTextPost(wxApiKeyInp, "Weather API Key", {});
+    els.setWxApiKey = wxApiKeyInp;
 
     wxBody.appendChild(fieldLabel("City Search"));
     var wxSearchRow = document.createElement("div");
@@ -2734,6 +2741,7 @@
         outdoor_temp_entity: state.outdoorEntity,
         presence_sensor_entity: state.presenceEntity,
         screensaver_timeout: state.screensaverTimeout,
+        weather_api_key: state.weatherApiKey,
         weather_latitude: state.weatherLat,
         weather_longitude: state.weatherLon,
         weather_location: state.weatherLocation,
@@ -2934,12 +2942,15 @@
           updateTempPreview();
 
           if (s.weather_latitude != null) {
+            postText("Weather API Key", s.weather_api_key || "");
             postText("Weather Latitude", s.weather_latitude || "");
             postText("Weather Longitude", s.weather_longitude || "");
             postText("Weather Location", s.weather_location || "");
+            state.weatherApiKey = s.weather_api_key || "";
             state.weatherLat = s.weather_latitude || "";
             state.weatherLon = s.weather_longitude || "";
             state.weatherLocation = s.weather_location || "";
+            syncInput(els.setWxApiKey, state.weatherApiKey);
             syncInput(els.setWxLat, state.weatherLat);
             syncInput(els.setWxLon, state.weatherLon);
             if (els.wxLocationLabel) els.wxLocationLabel.textContent = state.weatherLocation || "No location set";
@@ -3057,6 +3068,10 @@
         state.presenceEntity = val;
         syncInput(els.setPresence, val);
         if (els.setSsMode) els.setSsMode(val ? "sensor" : "timer");
+      },
+      "text-weather_api_key": function (val) {
+        state.weatherApiKey = val;
+        syncInput(els.setWxApiKey, val);
       },
       "text-weather_latitude": function (val) {
         state.weatherLat = val;
