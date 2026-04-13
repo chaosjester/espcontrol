@@ -290,7 +290,64 @@ esphome:
                 lv_obj_t *stl = lv_label_create(sb_btn);
                 lv_obj_align(stl, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
-                if (!sb.entity.empty()) {
+                if (sb.type == "sensor") {
+                  if (sb.sensor.empty()) continue;
+                  if (has_sensor_color)
+                    lv_obj_set_style_bg_color(sb_btn, lv_color_hex(sensor_val),
+                      static_cast<lv_style_selector_t>(LV_PART_MAIN) | static_cast<lv_style_selector_t>(LV_STATE_DEFAULT));
+                  lv_obj_clear_flag(sb_btn, LV_OBJ_FLAG_CLICKABLE);
+                  lv_obj_add_flag(sil, LV_OBJ_FLAG_HIDDEN);
+
+                  lv_obj_t *sc = lv_obj_create(sb_btn);
+                  lv_obj_set_align(sc, LV_ALIGN_TOP_LEFT);
+                  lv_obj_set_size(sc, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                  lv_obj_clear_flag(sc, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+                  lv_obj_set_style_bg_opa(sc, LV_OPA_TRANSP, LV_PART_MAIN);
+                  lv_obj_set_style_border_width(sc, 0, LV_PART_MAIN);
+                  lv_obj_set_style_pad_all(sc, 0, LV_PART_MAIN);
+                  lv_obj_set_layout(sc, LV_LAYOUT_FLEX);
+                  lv_obj_set_style_flex_flow(sc, LV_FLEX_FLOW_ROW, LV_PART_MAIN);
+                  lv_obj_set_style_flex_cross_place(sc, LV_FLEX_ALIGN_END, LV_PART_MAIN);
+
+                  lv_obj_t *svl = lv_label_create(sc);
+                  lv_obj_set_style_text_font(svl, id(statistics_font), LV_PART_MAIN);
+                  lv_obj_set_style_text_color(svl, sp_txt_color, LV_PART_MAIN);
+                  lv_label_set_text(svl, "--");
+
+                  lv_obj_t *sul = lv_label_create(sc);
+                  lv_obj_set_style_text_font(sul, sp_btn_fnt, LV_PART_MAIN);
+                  lv_obj_set_style_text_color(sul, sp_txt_color, LV_PART_MAIN);
+                  lv_obj_set_style_pad_bottom(sul, 6, LV_PART_MAIN);
+                  if (!sb.unit.empty())
+                    lv_label_set_text(sul, sb.unit.c_str());
+
+                  subscribe_sensor_value(svl, sb.sensor);
+                  if (!sb.label.empty()) {
+                    lv_label_set_text(stl, sb.label.c_str());
+                  } else {
+                    subscribe_friendly_name(stl, sb.sensor);
+                  }
+
+                } else if (sb.type == "push") {
+                  if (!sb.label.empty()) {
+                    lv_label_set_text(stl, sb.label.c_str());
+                  } else {
+                    lv_label_set_text(stl, "Push");
+                  }
+                  std::string *lbl = new std::string(sb.label.empty() ? "Push" : sb.label);
+                  lv_obj_add_event_cb(sb_btn, [](lv_event_t *e) {
+                    std::string *label = (std::string *)lv_event_get_user_data(e);
+                    api::HomeassistantActionRequest req;
+                    req.service = decltype(req.service)("esphome.push_button_pressed");
+                    req.is_event = true;
+                    req.data.init(1);
+                    auto &kv = req.data.emplace_back();
+                    kv.key = decltype(kv.key)("label");
+                    kv.value = decltype(kv.value)(label->c_str());
+                    api::global_api_server->send_homeassistant_action(req);
+                  }, LV_EVENT_CLICKED, lbl);
+
+                } else if (!sb.entity.empty()) {
                   if (!sb.label.empty()) {
                     lv_label_set_text(stl, sb.label.c_str());
                   } else {
