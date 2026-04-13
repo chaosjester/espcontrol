@@ -19,9 +19,11 @@ font:
     id: label_font_lg
     size: 24
     bpp: 4
+    glyphs: !include ../../../common/assets/text_glyphs.yaml
 
   # Top bar clock and temperature (22px, up from common 20px)
   - file: "gfonts://Roboto"
     id: clockbar_font_lg
     size: 22
     bpp: 4
+    glyphs: !include ../../../common/assets/text_glyphs.yaml
