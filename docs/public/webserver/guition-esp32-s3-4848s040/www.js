@@ -1896,7 +1896,7 @@
       });
       rotField.appendChild(rotSelect);
       rotationBody.appendChild(rotField);
-      config.appendChild(makeCollapsibleCard("Screen", rotationBody, true));
+      config.appendChild(makeCollapsibleCard("Rotation", rotationBody, true));
       els.setScreenRotation = rotSelect;
     }
 
