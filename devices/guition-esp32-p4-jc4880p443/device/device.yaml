@@ -111,11 +111,7 @@ light:
     gamma_correct: 1.0
     on_turn_on:
       then:
-        - if:
-            condition:
-              lambda: 'return id(screensaver_display_off_active);'
-            then:
-              - script.execute: screensaver_wake
+        - script.execute: screensaver_wake_from_backlight
 
 # ---------------------------------------------------------------------------
 # I2C bus and touchscreen (GT911 capacitive, wakes screensaver on touch)
