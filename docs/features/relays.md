@@ -22,6 +22,8 @@ On the 4848S040 firmware, Espcontrol exposes three relay switch entities to Home
 
 They appear as normal Home Assistant switch entities on the Espcontrol device. You can control them from Home Assistant dashboards, automations, scripts, and voice assistants.
 
+![Home Assistant controls card showing Display Backlight plus Relay 1, Relay 2, and Relay 3 switches](/images/relay-controls.svg)
+
 Home Assistant may adjust the exact entity ID if you have renamed the device or if another entity already used the same name. To find them, open **Settings > Devices & services**, select your Espcontrol device, then look for the three relay switches under the device entities.
 
 ## Using relays on the touchscreen
