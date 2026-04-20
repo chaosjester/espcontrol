@@ -2,20 +2,34 @@
 # FONTS (DEVICE OVERRIDE) - Font variants for the 1280x800 display
 # =============================================================================
 # Supplements the common fonts with device-specific variants for the main UI.
-# The common fonts (icon_font, label_font, etc.) still load for setup screens;
+# The common fonts still load for setup screens;
 # these _lt variants are referenced by the device theme and LVGL config.
 # =============================================================================
 
 font:
-  # Button labels (22px)
+  # Main page: large statistics / sensor values
+  - file: "gfonts://Roboto@Light"
+    id: statistics_font_lt
+    size: 64
+    bpp: 4
+    glyphs: "0123456789.-°/%kWhVA "
+
+  # Main page: button icons
+  - file: 'https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf'
+    id: icon_font_lt
+    size: 64
+    bpp: 4
+    glyphs: !include ../../../common/assets/icon_glyphs.yaml
+
+  # Button labels (28px)
   - file: "gfonts://Roboto"
     id: label_font_lt
-    size: 22
+    size: 28
     bpp: 4
     glyphs: !include ../../../common/assets/text_glyphs.yaml
 
-  # Top bar clock and temperature (20px)
+  # Top bar clock and temperature (24px)
   - file: "gfonts://Roboto"
     id: clockbar_font_lt
-    size: 20
+    size: 24
     bpp: 4
