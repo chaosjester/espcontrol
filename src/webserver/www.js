@@ -1020,15 +1020,6 @@
     }).catch(function () {});
   }
 
-  function refreshFirmwareVersion() {
-    getJsonQuietly("/text_sensor/" + encodeURIComponent(entityId("Firmware: Version")) + "?detail=all", function (d) {
-      setFirmwareVersion(d.state || d.value);
-    });
-    getJsonQuietly("/update/" + encodeURIComponent(entityId("Firmware: Update")) + "?detail=all", function (d) {
-      setFirmwareUpdateInfo(d);
-    });
-  }
-
   function waitForReboot() {
     if (_eventSource) { _eventSource.close(); _eventSource = null; }
     showBanner("Restarting device\u2026", "offline");
@@ -1897,7 +1888,6 @@
     fwVersionRow.appendChild(fwVersionLabel);
     els.fwVersionLabel = fwVersionLabel;
     renderFirmwareVersion();
-    refreshFirmwareVersion();
 
     var fwActions = document.createElement("div");
     fwActions.className = "sp-fw-actions";
@@ -1921,7 +1911,6 @@
       postButtonPress("Firmware: Check for Update");
       setTimeout(function () {
         state.firmwareChecking = false;
-        refreshFirmwareVersion();
         renderFirmwareUpdateStatus();
       }, 10000);
     });
@@ -4303,7 +4292,6 @@
       });
       clearTimeout(migrationTimer);
       migrationTimer = setTimeout(scheduleMigration, 5000);
-      refreshFirmwareVersion();
     });
 
     source.addEventListener("error", function () {
