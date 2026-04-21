@@ -12,7 +12,7 @@ You will find it in the **Settings** tab on the [Setup](/features/setup) page, u
 
 ## Settings
 
-- **Enable Schedule** - turns automatic screen sleep and wake on or off.
+- **Schedule Screen Off** - turns automatic screen sleep and wake on or off.
 - **On Time** - the first hour when the screen should be awake. The default is **6:00 AM**.
 - **Off Time** - the first hour when the screen should be asleep. The default is **11:00 PM**.
 
