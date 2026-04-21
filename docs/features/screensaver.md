@@ -28,7 +28,7 @@ The screensaver turns on after the panel hasn't been touched for a set amount of
 When the screensaver activates, you can choose what happens:
 
 - **Clock** — shows a large drifting clock at reduced brightness (the default). The clock repositions itself periodically to prevent burn-in.
-- **Display Off** — turns the backlight off completely.
+- **Display Off** — switches to a black screen and turns the backlight off completely.
 
 ## Sensor
 
