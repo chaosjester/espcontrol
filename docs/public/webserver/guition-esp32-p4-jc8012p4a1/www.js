@@ -1479,11 +1479,19 @@
 
   var _postQueue = Promise.resolve();
 
-  function post(url) {
+  function post(url, fallbackUrl, errorMessage) {
     _postQueue = _postQueue.then(function () {
       return fetch(url, { method: "POST" }).then(function (r) {
-        if (!r.ok) showBanner("Request failed: " + r.status, "error");
-        return r;
+        if (r.ok || !fallbackUrl) {
+          if (!r.ok) showBanner(errorMessage || ("Request failed: " + r.status), "error");
+          return r;
+        }
+        return fetch(fallbackUrl, { method: "POST" }).then(function (fallbackResponse) {
+          if (!fallbackResponse.ok) {
+            showBanner(errorMessage || ("Request failed: " + fallbackResponse.status), "error");
+          }
+          return fallbackResponse;
+        });
       }).catch(function () {
         showBanner("Cannot reach device \u2014 is it connected?", "error");
       });
@@ -1548,6 +1556,35 @@
 
   function postNumber(name, value) {
     post("/number/" + encodeURIComponent(name) + "/set?value=" + encodeURIComponent(value));
+  }
+
+  function postWithObjectId(domain, name, objectId, action, errorMessage) {
+    post("/" + domain + "/" + encodeURIComponent(name) + "/" + action,
+      "/" + domain + "/" + encodeURIComponent(objectId) + "/" + action,
+      errorMessage);
+  }
+
+  function postNumberWithObjectId(name, objectId, value, errorMessage) {
+    postWithObjectId("number", name, objectId, "set?value=" + encodeURIComponent(value), errorMessage);
+  }
+
+  function postSwitchWithObjectId(name, objectId, on, errorMessage) {
+    postWithObjectId("switch", name, objectId, on ? "turn_on" : "turn_off", errorMessage);
+  }
+
+  var SCREEN_SCHEDULE_UNAVAILABLE =
+    "Screen schedule is not available on this firmware. Update the device firmware, then reload this page.";
+
+  function postScreenScheduleEnabled(on) {
+    postSwitchWithObjectId("Screen: Schedule Enabled", "screen__schedule_enabled", on, SCREEN_SCHEDULE_UNAVAILABLE);
+  }
+
+  function postScreenScheduleOnHour(value) {
+    postNumberWithObjectId("Screen: Schedule On Hour", "screen__schedule_on_hour", value, SCREEN_SCHEDULE_UNAVAILABLE);
+  }
+
+  function postScreenScheduleOffHour(value) {
+    postNumberWithObjectId("Screen: Schedule Off Hour", "screen__schedule_off_hour", value, SCREEN_SCHEDULE_UNAVAILABLE);
   }
 
   function getJsonQuietly(path, callback) {
@@ -2167,7 +2204,7 @@
 
     var onHour = createHourSelect("On Time", "sp-set-schedule-on-hour", state.scheduleOnHour, function (hour) {
       state.scheduleOnHour = hour;
-      postNumber("Screen: Schedule On Hour", hour);
+      postScreenScheduleOnHour(hour);
       syncScreenScheduleUi();
     });
     scheduleTimes.appendChild(onHour.wrap);
@@ -2175,7 +2212,7 @@
 
     var offHour = createHourSelect("Off Time", "sp-set-schedule-off-hour", state.scheduleOffHour, function (hour) {
       state.scheduleOffHour = hour;
-      postNumber("Screen: Schedule Off Hour", hour);
+      postScreenScheduleOffHour(hour);
       syncScreenScheduleUi();
     });
     scheduleTimes.appendChild(offHour.wrap);
@@ -2186,7 +2223,7 @@
 
     scheduleToggle.input.addEventListener("change", function () {
       state.scheduleEnabled = this.checked;
-      postSwitch("Screen: Schedule Enabled", state.scheduleEnabled);
+      postScreenScheduleEnabled(state.scheduleEnabled);
       syncScreenScheduleUi();
     });
 
@@ -4844,9 +4881,9 @@
 
           postNumber("Screen: Daytime Brightness", state.brightnessDayVal);
           postNumber("Screen: Nighttime Brightness", state.brightnessNightVal);
-          postNumber("Screen: Schedule On Hour", state.scheduleOnHour);
-          postNumber("Screen: Schedule Off Hour", state.scheduleOffHour);
-          postSwitch("Screen: Schedule Enabled", state.scheduleEnabled);
+          postScreenScheduleOnHour(state.scheduleOnHour);
+          postScreenScheduleOffHour(state.scheduleOffHour);
+          postScreenScheduleEnabled(state.scheduleEnabled);
 
           if (els.setDayBrightness) {
             els.setDayBrightness.value = state.brightnessDayVal;
