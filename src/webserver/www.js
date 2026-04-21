@@ -1748,7 +1748,7 @@
 
     var wakeTimeoutField = document.createElement("div");
     wakeTimeoutField.className = "sp-field";
-    wakeTimeoutField.appendChild(fieldLabel("When Woken, Idle time before screen off", "sp-set-schedule-wake-timeout"));
+    wakeTimeoutField.appendChild(fieldLabel("When Woken, Idle Time To Screen Off", "sp-set-schedule-wake-timeout"));
     var wakeTimeoutSelect = document.createElement("select");
     wakeTimeoutSelect.className = "sp-select";
     wakeTimeoutSelect.id = "sp-set-schedule-wake-timeout";

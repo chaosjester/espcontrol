@@ -15,7 +15,7 @@ You will find it in the **Settings** tab on the [Setup](/features/setup) page, u
 - **Schedule Screen Off** - turns automatic screen sleep and wake on or off.
 - **On Time** - the first hour when the screen should be awake. The default is **6:00 AM**.
 - **Off Time** - the first hour when the screen should be asleep. The default is **11:00 PM**.
-- **When Woken, Idle time before screen off** - how long the screen stays awake after you tap it during the scheduled-off hours. The default is **1 minute**.
+- **When Woken, Idle Time To Screen Off** - how long the screen stays awake after you tap it during the scheduled-off hours. The default is **1 minute**.
 
 When the schedule is disabled, the on and off time controls are hidden and the panel uses the normal [screensaver](/features/screensaver) and [backlight](/features/backlight) rules.
 
