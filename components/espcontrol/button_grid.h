@@ -96,7 +96,7 @@ struct ParsedCfg {
   std::string icon_on;     // 3  icon name for on state (blank = no swap)
   std::string sensor;      // 4  sensor entity for toggle overlay; "h" for horizontal slider
   std::string unit;        // 5  unit suffix for sensor display
-  std::string type;        // 6  button type: "" (toggle), sensor, slider, cover, push, subpage
+  std::string type;        // 6  button type: "" (toggle), sensor, slider, cover, garage, push, subpage
   std::string precision;   // 7  decimal places for sensors; "text" = text sensor mode
 };
 
@@ -211,6 +211,19 @@ inline std::string weather_label_for_state(const std::string &state) {
     label[0] = static_cast<char>(toupper(static_cast<unsigned char>(label[0])));
   }
   return label;
+}
+
+inline const char* garage_closed_icon(const std::string &icon) {
+  return (icon.empty() || icon == "Auto") ? find_icon("Garage") : find_icon(icon.c_str());
+}
+
+inline const char* garage_open_icon(const std::string &icon_on) {
+  return (icon_on.empty() || icon_on == "Auto") ? find_icon("Garage Open") : find_icon(icon_on.c_str());
+}
+
+inline std::string garage_state_label(const std::string &state) {
+  if (state.empty()) return "--";
+  return sentence_cap_text(state);
 }
 
 // Parse a 6-char hex color string (no # prefix) into a uint32_t RGB value
@@ -464,6 +477,11 @@ inline void setup_weather_card(BtnSlot &s, bool has_sensor_color, uint32_t senso
   lv_label_set_text(s.text_lbl, "Weather");
 }
 
+inline void setup_garage_card(BtnSlot &s, const ParsedCfg &p) {
+  lv_label_set_text(s.icon_lbl, garage_closed_icon(p.icon));
+  lv_label_set_text(s.text_lbl, "--");
+}
+
 // Set icon and label on a toggle/push button based on its config
 inline void setup_toggle_visual(BtnSlot &s, const ParsedCfg &p) {
   if (!p.entity.empty()) {
@@ -557,6 +575,23 @@ inline void subscribe_weather_state(lv_obj_t *icon_lbl, lv_obj_t *text_lbl, cons
       lv_label_set_text(icon_lbl, weather_icon_for_state(state));
       lv_label_set_text(text_lbl, weather_label_for_state(state).c_str());
     })
+  );
+}
+
+inline void subscribe_garage_state(lv_obj_t *btn_ptr, lv_obj_t *icon_lbl, lv_obj_t *text_lbl,
+                                   const char *closed_icon, const char *open_icon,
+                                   const std::string &entity_id) {
+  esphome::api::global_api_server->subscribe_home_assistant_state(
+    entity_id, {},
+    std::function<void(const std::string &)>(
+      [btn_ptr, icon_lbl, text_lbl, closed_icon, open_icon](const std::string &state) {
+        bool active = is_entity_on(state);
+        if (active) lv_obj_add_state(btn_ptr, LV_STATE_CHECKED);
+        else lv_obj_clear_state(btn_ptr, LV_STATE_CHECKED);
+        lv_label_set_text(icon_lbl, active ? open_icon : closed_icon);
+        std::string label = garage_state_label(state);
+        lv_label_set_text(text_lbl, label.c_str());
+      })
   );
 }
 
@@ -699,6 +734,11 @@ inline void handle_button_click(const std::string &cfg, int slot_num,
     lv_obj_t *sub_scr = (lv_obj_t *)lv_obj_get_user_data(btn_obj);
     if (sub_scr)
       lv_scr_load_anim(sub_scr, LV_SCR_LOAD_ANIM_NONE, 0, 0, false);
+  } else if (p.type == "garage") {
+    if (!p.entity.empty()) {
+      lv_obj_add_state(btn_obj, LV_STATE_CHECKED);
+      send_toggle_action(p.entity);
+    }
   } else if (p.type == "slider" || p.type == "cover") {
     if (!p.entity.empty()) send_slider_action(p.entity, -1);
   } else {
@@ -899,7 +939,7 @@ struct SubpageBtn {
   std::string icon_on;
   std::string sensor;     // sensor entity for toggle; orientation "h"|"" for slider/cover
   std::string unit;
-  std::string type;
+  std::string type;       // button type: "" (toggle), sensor, slider, cover, garage, push, subpage
   std::string precision;  // decimal places for sensor display; "text" = text sensor mode
 };
 
@@ -921,6 +961,7 @@ inline std::string compact_subpage_type(const std::string &code) {
   if (code == "W") return "weather";
   if (code == "L") return "slider";
   if (code == "C") return "cover";
+  if (code == "R") return "garage";
   if (code == "P") return "push";
   if (code == "G") return "subpage";
   return code;
@@ -1215,6 +1256,10 @@ inline void grid_phase1(
       setup_weather_card(s, has_sensor_color, sensor_val);
       continue;
     }
+    if (p.type == "garage") {
+      setup_garage_card(s, p);
+      continue;
+    }
     if (p.type == "slider" || p.type == "cover") {
       setup_slider_visual(s, p, has_on ? on_val : DEFAULT_SLIDER_COLOR);
     } else {
@@ -1302,6 +1347,12 @@ inline void grid_phase2(
     if (p.type == "weather") {
       if (!p.entity.empty())
         subscribe_weather_state(s.icon_lbl, s.text_lbl, p.entity);
+      continue;
+    }
+    if (p.type == "garage") {
+      if (!p.entity.empty())
+        subscribe_garage_state(s.btn, s.icon_lbl, s.text_lbl,
+          garage_closed_icon(p.icon), garage_open_icon(p.icon_on), p.entity);
       continue;
     }
 
@@ -1573,6 +1624,43 @@ inline void grid_phase2(
         lv_label_set_text(stl, "Weather");
         if (!sb.entity.empty())
           subscribe_weather_state(sil, stl, sb.entity);
+
+      } else if (sb.type == "garage") {
+        lv_label_set_text(sil, garage_closed_icon(sb.icon));
+        lv_label_set_text(stl, "--");
+        if (!sb.entity.empty()) {
+          subscribe_garage_state(sb_btn, sil, stl,
+            garage_closed_icon(sb.icon), garage_open_icon(sb.icon_on), sb.entity);
+
+          if (sp_indicator) {
+            lv_obj_t *parent_btn = slots[si].btn;
+            lv_obj_t *parent_icon = slots[si].icon_lbl;
+            int parent_idx = si;
+            int cwi = sp_child_alloc_idx++;
+            if (cwi >= MAX_SUBPAGE_ITEMS) {
+              ESP_LOGW("sensors", "Too many subpage state indicators; skipping %s", sb.entity.c_str());
+            } else {
+              sp_child_was_on[cwi] = false;
+              subscribe_subpage_parent_indicator(
+                sb.entity, parent_btn, parent_icon, parent_idx,
+                &sp_child_was_on[cwi], sp_has_icon_on,
+                sp_icon_off_glyph, sp_icon_on_glyph, sp_on_count);
+            }
+          }
+
+          int eid_idx = sp_entity_alloc_idx++;
+          if (eid_idx >= MAX_SUBPAGE_ITEMS) {
+            ESP_LOGW("sensors", "Too many subpage click handlers; skipping %s", sb.entity.c_str());
+          } else {
+            sp_entity_ids[eid_idx] = sb.entity;
+            lv_obj_add_event_cb(sb_btn, [](lv_event_t *e) {
+              lv_obj_t *target = static_cast<lv_obj_t *>(lv_event_get_target(e));
+              lv_obj_add_state(target, LV_STATE_CHECKED);
+              std::string *en = (std::string *)lv_event_get_user_data(e);
+              if (en && !en->empty()) send_toggle_action(*en);
+            }, LV_EVENT_CLICKED, &sp_entity_ids[eid_idx]);
+          }
+        }
 
       } else if (sb.type == "push") {
         if (!sb.label.empty()) {

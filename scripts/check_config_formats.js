@@ -53,6 +53,7 @@ function subpageTypeFromCode(code) {
     W: "weather",
     L: "slider",
     C: "cover",
+    R: "garage",
     P: "push",
     G: "subpage",
   }[code || ""] || (code || "");
@@ -231,6 +232,13 @@ assert.deepStrictEqual(subpageShape(hooks.parseSubpageConfig("~1,B|D")), {
     buttonShape({ type: "calendar" }),
   ],
 }, "compact calendar subpage parse");
+
+assert.deepStrictEqual(subpageShape(hooks.parseSubpageConfig("~1,B|R,cover.garage,,Garage,Garage%20Open")), {
+  order: ["1", "B"],
+  buttons: [
+    buttonShape({ entity: "cover.garage", icon: "Garage", icon_on: "Garage Open", type: "garage" }),
+  ],
+}, "compact garage subpage parse");
 
 const largeSubpage = {
   order: Array.from({ length: 25 }, (_, i) => (i === 4 ? "B" : String(i + 1))),

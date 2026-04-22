@@ -178,6 +178,7 @@ export default defineConfig({
           { text: 'Buttons', link: '/card-types/buttons' },
           { text: 'Covers', link: '/card-types/covers' },
           { text: 'Date', link: '/card-types/calendar' },
+          { text: 'Garage Doors', link: '/card-types/garage-doors' },
           { text: 'Sensors', link: '/card-types/sensors' },
           { text: 'Sliders', link: '/card-types/sliders' },
           { text: 'Weather', link: '/card-types/weather' },

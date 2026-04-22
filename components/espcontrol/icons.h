@@ -263,6 +263,8 @@ inline const char* domain_default_icon(const std::string &domain) {
 inline bool is_entity_on(const std::string &state) {
   return state == "on" ||
          state == "open" ||
+         state == "opening" ||
+         state == "closing" ||
          state == "playing" ||
          state == "home" ||
          state == "unlocked";
