@@ -27,7 +27,18 @@ They appear as normal Home Assistant entities on the Espcontrol device. You can 
 
 ![Home Assistant controls card showing Display Backlight plus Relay 1, Relay 2, and Relay 3 switches](/images/relay-controls.svg)
 
-Home Assistant may adjust the exact entity ID if you have renamed the device or if another entity already used the same name. To find them, open **Settings > Devices & services**, select your Espcontrol device, then look for the three relay switches under the device entities.
+Home Assistant may adjust the exact entity ID if you have renamed the device or if another entity already used the same name. To find them, open **Settings > Devices & services**, select your Espcontrol device, then look for the relay switches and relay push buttons under the device entities.
+
+## Switches vs Push Buttons
+
+Each relay has both a switch and a push button version because they suit different wiring jobs.
+
+| Entity type | What it does | Typical uses |
+|---|---|---|
+| **Relay switch** | Turns the relay on and leaves it on until you turn it off. | Keeping a low-voltage light, LED strip, fan input, buzzer, or other simple circuit on for a while. |
+| **Relay push button** | Pulses the relay on for 200 ms, then turns it off automatically. | Mimicking a quick press on a garage door input, gate opener, doorbell, dimmer, lighting controller, scene controller, or any device that expects a momentary button press. |
+
+Use the switch version when the relay should represent an ongoing on/off state. Use the push button version when the connected device only needs a short signal and then takes care of the action itself.
 
 ## Using Relays on the Touchscreen
 
