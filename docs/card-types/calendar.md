@@ -13,12 +13,11 @@ Date cards are read-only — tapping them does nothing.
 ## Setting Up a Date Card
 
 1. Select a card and change its type to **Date**.
-2. Leave **Date Entity** as `sensor.date`, or enter another Home Assistant entity that returns a date.
-3. Apply the configuration so the panel restarts with the new card.
+2. Apply the configuration so the panel restarts with the new card.
 
 ## How It Works on the Panel
 
-- The day number updates from Home Assistant. By default the card reads `sensor.date`, and it also falls back to the panel's Home Assistant time source.
+- The day number updates from Home Assistant. The card reads `sensor.date`, and it also falls back to the panel's Home Assistant time source.
 - The month label follows the timezone selected in [Clock](/features/clock).
 - The panel publishes a **Screen: Date** diagnostic value, so you can check whether the device currently knows the date.
 - The card uses the **tertiary** colour from [Appearance](/features/appearance), like sensor and weather cards.

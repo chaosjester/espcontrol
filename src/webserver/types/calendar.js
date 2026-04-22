@@ -13,14 +13,7 @@ registerButtonType("calendar", {
     b.precision = "";
   },
   renderSettings: function (panel, b, slot, helpers) {
-    var ef = document.createElement("div");
-    ef.className = "sp-field";
-    ef.appendChild(helpers.fieldLabel("Date Entity", helpers.idPrefix + "entity"));
-    var entityInp = helpers.textInput(helpers.idPrefix + "entity", b.entity || "sensor.date", "e.g. sensor.date");
-    ef.appendChild(entityInp);
-    panel.appendChild(ef);
     if (!b.entity) b.entity = "sensor.date";
-    helpers.bindField(entityInp, "entity", true);
   },
   renderPreview: function (b, helpers) {
     var now = new Date();
