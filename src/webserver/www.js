@@ -1921,7 +1921,7 @@
 
     var fonts = document.createElement("link");
     fonts.rel = "stylesheet";
-    fonts.href = "https://fonts.googleapis.com/css2?family=Cookie&family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap";
+    fonts.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap";
     document.head.appendChild(fonts);
 
     buildUI();
@@ -1967,7 +1967,6 @@
     buildScreenPage(root);
     buildSettingsPage(root);
     buildLogsPage(root);
-    buildSupportButton(root);
 
     var app = document.querySelector("esp-app");
     if (app) {
@@ -1978,23 +1977,6 @@
     els.root = root;
     switchTab("screen");
   }
-
-  function buildSupportButton(parent) {
-    var support = document.createElement("a");
-    support.className = "sp-support-btn";
-    support.href = "https://www.buymeacoffee.com/jtenniswood";
-    support.target = "_blank";
-    support.rel = "noopener";
-    support.setAttribute("aria-label", "Buy me a coffee");
-    support.innerHTML =
-      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-      '<path fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round" d="M4 8h12v5.5A4.5 4.5 0 0 1 11.5 18h-3A4.5 4.5 0 0 1 4 13.5V8z"/>' +
-      '<path fill="none" stroke="#000" stroke-width="1.4" stroke-linecap="round" d="M16 10h1.2a2.3 2.3 0 0 1 0 4.6H16M7 4.5c-.6.6-.6 1.2 0 1.8M10 4.5c-.6.6-.6 1.2 0 1.8M13 4.5c-.6.6-.6 1.2 0 1.8"/>' +
-      '<path fill="#fff" d="M5 18h10v1.2H5z"/>' +
-      '</svg><span>Buy me a coffee</span>';
-    parent.appendChild(support);
-  }
-
   function buildHeader(parent) {
     var header = document.createElement("div");
     header.className = "sp-header";
