@@ -1,10 +1,9 @@
 // =============================================================================
 // ESPCONTROL WEB UI - Custom device configuration interface
 // =============================================================================
-// Replaces the default ESPHome webserver UI with a three-tab layout:
+// Replaces the default ESPHome webserver UI with a two-tab layout:
 //   Screen  - Live grid preview with drag-and-drop button arrangement
 //   Settings - Display, brightness, firmware, and entity configuration
-//   Logs    - Real-time device log viewer via SSE
 //
 // Per-device config (grid size, styling) is injected between __DEVICE_CONFIG__
 // markers by scripts/build.py. Button type plugins (switch, sensor, weather,
@@ -12,7 +11,7 @@
 // Icon data is generated between GENERATED:ICONS / GENERATED:DOMAIN_ICONS.
 // =============================================================================
 
-// Custom UI: three-page layout (Screen / Settings / Logs)
+// Custom UI: two-page layout (Screen / Settings)
 (function () {
   // __DEVICE_CONFIG_START__
   var DEVICE_ID = "guition-esp32-p4-jc1060p470";
@@ -419,24 +418,6 @@
     ".sp-apply-btn:active{opacity:.85}" +
     ".sp-apply-btn:disabled{opacity:.4;cursor:not-allowed}" +
     ".sp-apply-note{font-size:.75rem;color:var(--text3);margin-top:8px}" +
-
-    ".sp-log-toolbar{display:flex;justify-content:flex-end;padding:12px var(--gap) 0}" +
-    ".sp-log-clear{background:var(--surface2);color:var(--text);border:1px solid var(--border);" +
-    "border-radius:var(--action-r);padding:8px 14px;font-size:.8rem;font-weight:500;cursor:pointer;" +
-    "font-family:inherit;transition:all .25s}" +
-    ".sp-log-clear:hover{background:var(--border);border-color:#4a4d54}" +
-    ".sp-log-output{margin:8px var(--gap) var(--gap);padding:16px;background:var(--surface);" +
-    "border:1px solid var(--border);border-radius:var(--radius);" +
-    "font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;" +
-    "font-size:.75rem;line-height:1.7;color:var(--text2);overflow-x:auto;overflow-y:auto;" +
-    "max-height:70vh;white-space:pre;word-break:break-all}" +
-    ".sp-log-line{padding:1px 0;border-left:3px solid transparent;padding-left:8px}" +
-    ".sp-log-error{color:#f66f81;border-left-color:#f14158;background:rgba(244,63,94,.08)}" +
-    ".sp-log-warn{color:#f9b44e;border-left-color:#da8b17;background:rgba(234,179,8,.06)}" +
-    ".sp-log-info{color:#3dd68c}" +
-    ".sp-log-config{color:#c8abfa}" +
-    ".sp-log-debug{color:#5c73e7}" +
-    ".sp-log-verbose{color:var(--text2)}" +
 
     ".sp-empty{text-align:center;padding:24px;color:var(--text3);font-size:.85rem}" +
 
@@ -1967,7 +1948,6 @@
     buildHeader(root);
     buildScreenPage(root);
     buildSettingsPage(root);
-    buildLogsPage(root);
 
     var app = document.querySelector("esp-app");
     if (app) {
@@ -1976,10 +1956,7 @@
       document.body.insertBefore(root, document.body.firstChild);
     }
     els.root = root;
-    switchTab(tabFromHash());
-    window.addEventListener("hashchange", function () {
-      switchTab(tabFromHash());
-    });
+    switchTab("screen");
   }
   function buildHeader(parent) {
     var header = document.createElement("div");
@@ -1997,7 +1974,6 @@
     var tabs = [
       { id: "screen", label: "Screen" },
       { id: "settings", label: "Settings" },
-      { id: "logs", label: "Logs" },
     ];
 
     tabs.forEach(function (t) {
@@ -2945,45 +2921,14 @@
     return bar;
   }
 
-  // ── Logs Page ──────────────────────────────────────────────────────────
-
-  function buildLogsPage(parent) {
-    var page = document.createElement("div");
-    page.id = "sp-logs";
-    page.className = "sp-page";
-
-    var toolbar = document.createElement("div");
-    toolbar.className = "sp-log-toolbar";
-    var clearBtn = document.createElement("button");
-    clearBtn.className = "sp-log-clear";
-    clearBtn.textContent = "Clear";
-    clearBtn.addEventListener("click", function () { els.logOutput.innerHTML = ""; });
-    toolbar.appendChild(clearBtn);
-    page.appendChild(toolbar);
-
-    var output = document.createElement("div");
-    output.className = "sp-log-output";
-    page.appendChild(output);
-    els.logOutput = output;
-
-    parent.appendChild(page);
-    els.logsPage = page;
-  }
-
   function switchTab(tab) {
     state.activeTab = tab;
-    ["screen", "settings", "logs"].forEach(function (t) {
+    ["screen", "settings"].forEach(function (t) {
       els["tab_" + t].className = "sp-tab" + (tab === t ? " active" : "");
       els["tab_" + t].setAttribute("aria-selected", tab === t ? "true" : "false");
     });
     els.screenPage.className = "sp-page" + (tab === "screen" ? " active" : "");
     els.settingsPage.className = "sp-page" + (tab === "settings" ? " active" : "");
-    els.logsPage.className = "sp-page" + (tab === "logs" ? " active" : "");
-  }
-
-  function tabFromHash() {
-    var hash = (window.location.hash || "").replace(/^#/, "");
-    return hash === "logs" || hash === "settings" ? hash : "screen";
   }
 
   // ── Preview rendering (unified) ────────────────────────────────────────
@@ -5575,11 +5520,6 @@
       console.log("[SSE] unhandled:", id, val);
     });
 
-    source.addEventListener("log", function (e) {
-      var d;
-      try { d = JSON.parse(e.data); } catch (_) { d = { msg: e.data }; }
-      appendLog(d.msg || e.data, d.lvl);
-    });
   }
 
   function syncInput(el, val) {
@@ -5641,69 +5581,12 @@
     }
   }
 
-  // ── Log viewer ─────────────────────────────────────────────────────────
-
-  var ANSI_LEVEL = {
-    "1;31": "sp-log-error",   // bold red → error
-    "0;31": "sp-log-error",   // red → error
-    "0;33": "sp-log-warn",    // yellow → warning
-    "0;32": "sp-log-info",    // green → info
-    "0;35": "sp-log-config",  // magenta → config
-    "0;36": "sp-log-debug",   // cyan → debug
-    "0;37": "sp-log-verbose"  // white → verbose
-  };
-  var ANSI_RE = /\033\[[\d;]*m/g;
-  var HIDDEN_STATE_LOG_RE = [
-    /\[[DS]\]\[text_sensor(?::[^\]]*)?\].*['"]Screen: Date['"].*(>>|Sending state)/,
-    /\[[DS]\]\[sensor(?::[^\]]*)?\].*['"]Wifi Strength['"].*(>>|Sending state)/
-  ];
-
-  function shouldHideLogMessage(msg) {
-    var clean = String(msg || "").replace(ANSI_RE, "");
-    for (var i = 0; i < HIDDEN_STATE_LOG_RE.length; i++) {
-      if (HIDDEN_STATE_LOG_RE[i].test(clean)) return true;
-    }
-    return false;
-  }
-
-  function appendLog(msg, lvl) {
-    if (!els.logOutput) return;
-    if (shouldHideLogMessage(msg)) return;
-    var line = document.createElement("div");
-    line.className = "sp-log-line";
-
-    var ansiClass = "";
-    var m = msg.match(/\033\[([\d;]+)m/);
-    if (m) ansiClass = ANSI_LEVEL[m[1]] || "";
-
-    if (ansiClass) {
-      line.classList.add(ansiClass);
-    } else if (lvl === 1) line.classList.add("sp-log-error");
-    else if (lvl === 2) line.classList.add("sp-log-warn");
-    else if (lvl === 3) line.classList.add("sp-log-info");
-    else if (lvl === 4) line.classList.add("sp-log-config");
-    else if (lvl === 5) line.classList.add("sp-log-debug");
-    else if (lvl >= 6) line.classList.add("sp-log-verbose");
-
-    line.textContent = msg.replace(ANSI_RE, "");
-
-    var atBottom = els.logOutput.scrollHeight - els.logOutput.scrollTop - els.logOutput.clientHeight < 40;
-    els.logOutput.appendChild(line);
-    var overflow = els.logOutput.childNodes.length - 1000;
-    if (overflow > 0) {
-      for (var i = 0; i < overflow; i++)
-        els.logOutput.removeChild(els.logOutput.firstChild);
-    }
-    if (atBottom) els.logOutput.scrollTop = els.logOutput.scrollHeight;
-  }
-
   if (typeof globalThis !== "undefined" && globalThis.__ESPCONTROL_TEST_HOOKS__) {
     globalThis.__ESPCONTROL_TEST_HOOKS__.config = {
       parseButtonConfig: parseButtonConfig,
       serializeButtonConfig: serializeButtonConfig,
       parseSubpageConfig: parseSubpageConfig,
       serializeSubpageConfig: serializeSubpageConfig,
-      shouldHideLogMessage: shouldHideLogMessage,
     };
   }
 
