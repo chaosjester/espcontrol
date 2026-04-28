@@ -235,15 +235,21 @@ spi:
 # I2C bus and touchscreen (GT911 capacitive, wakes screensaver on touch)
 # ---------------------------------------------------------------------------
 i2c:
-  sda: GPIO19
-  scl:
-    number: 45
-    ignore_strapping_warning: true
+  - id: bus_a
+    sda: GPIO19
+    scl:
+      number: 45
+      ignore_strapping_warning: true
+  - id: bus_b
+    sda: GPIO1
+    scl: GPIO2
+    scan: true
 
 touchscreen:
   - platform: gt911
     id: my_touchscreen
     display: my_display
+    i2c_id: bus_a
     update_interval: 16ms
     transform:
       mirror_x: true
