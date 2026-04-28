@@ -249,7 +249,7 @@ touchscreen:
   - platform: gt911
     id: my_touchscreen
     display: my_display
-    i2c_id: bus_a
+    # i2c_id: bus_a
     update_interval: 16ms
     transform:
       mirror_x: true
