@@ -240,6 +240,7 @@ i2c:
     scl:
       number: 45
       ignore_strapping_warning: true
+    scan: true
   - id: bus_b
     sda: GPIO1
     scl: GPIO2
