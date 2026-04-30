@@ -7,7 +7,7 @@
 # =============================================================================
 
 substitutions:
-  espcontrol_component_url: "https://github.com/chaosjester/espcontrol
+  espcontrol_component_url: "https://github.com/chaosjester/espcontrol"
   espcontrol_component_ref: "main"
 
 # ---------------------------------------------------------------------------
